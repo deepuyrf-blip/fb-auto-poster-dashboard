@@ -2,342 +2,419 @@
 <html lang="hi">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>FB Auto Poster — Control Panel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>FB Auto Poster · Control Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/gh/jedisct1/libsodium.js@master/dist/browsers/sodium.js"></script>
 <style>
   :root{
-    --bg:#0b0d12; --bg2:#12151c; --card:#161a22; --card2:#1b2029; --line:#262c38;
-    --fg:#eef1f6; --mut:#8b94a7; --acc:#f5a623; --acc2:#ffcf70;
-    --ok:#34d399; --bad:#f87171; --warn:#fbbf24; --info:#60a5fa;
-    --shadow:0 10px 30px rgba(0,0,0,.35);
+    --bg:#08090d; --bg-2:#0d0f15;
+    --surface:rgba(255,255,255,.035); --surface-2:rgba(255,255,255,.055);
+    --line:rgba(255,255,255,.075); --line-2:rgba(255,255,255,.12);
+    --fg:#f2f4f9; --mut:#8b93a7; --mut-2:#616b80;
+    --acc:#f7b955; --acc-2:#e08a00;
+    --ok:#3ddc97; --bad:#ff6b6b; --warn:#ffc857; --info:#6aa9ff;
+    --r:16px; --r-lg:22px;
+    --shadow:0 18px 50px -20px rgba(0,0,0,.8);
+    --ring:0 0 0 3px rgba(247,185,85,.16);
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{margin:0;padding:0}
+  html,body{margin:0;padding:0;height:100%}
   body{
-    font-family:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
+    font-family:'Plus Jakarta Sans',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    background:var(--bg); color:var(--fg); line-height:1.55;
+    -webkit-font-smoothing:antialiased; letter-spacing:-.01em;
+  }
+  body::before{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
     background:
-      radial-gradient(1200px 600px at 80% -10%, rgba(245,166,35,.10), transparent 60%),
-      radial-gradient(900px 500px at -10% 10%, rgba(120,60,220,.10), transparent 55%),
-      var(--bg);
-    color:var(--fg); line-height:1.55; min-height:100vh;
+      radial-gradient(900px 500px at 85% -8%, rgba(247,185,85,.10), transparent 60%),
+      radial-gradient(800px 500px at -12% 8%, rgba(120,90,255,.09), transparent 58%),
+      radial-gradient(700px 500px at 50% 110%, rgba(60,220,150,.06), transparent 60%);
   }
-  a{color:var(--acc2);text-decoration:none}
+  a{color:var(--acc);text-decoration:none}
   .hide{display:none !important}
+  ::selection{background:rgba(247,185,85,.28)}
+  ::-webkit-scrollbar{width:10px;height:10px}
+  ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:20px;border:3px solid transparent;background-clip:content-box}
 
-  /* ---------- header ---------- */
-  header{
-    position:sticky;top:0;z-index:20;
-    backdrop-filter:blur(14px);
-    background:linear-gradient(180deg, rgba(20,14,8,.92), rgba(15,12,10,.72));
-    border-bottom:1px solid var(--line);
+  /* ============ shell ============ */
+  .shell{position:relative;z-index:1;display:grid;grid-template-columns:1fr;min-height:100vh}
+  @media(min-width:960px){.shell{grid-template-columns:264px 1fr}}
+
+  /* ============ sidebar ============ */
+  .side{
+    position:sticky;top:0;z-index:30;
+    background:linear-gradient(180deg, rgba(18,20,27,.96), rgba(11,13,18,.9));
+    border-bottom:1px solid var(--line); backdrop-filter:blur(18px);
   }
-  .hwrap{max-width:920px;margin:0 auto;padding:14px 16px 10px;display:flex;align-items:center;gap:12px}
-  .logo{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:20px;
-    background:linear-gradient(135deg,#f5a623,#b45309);box-shadow:0 6px 18px rgba(245,166,35,.35)}
-  .hwrap h1{margin:0;font-size:17px;letter-spacing:.2px}
-  .hwrap p{margin:1px 0 0;font-size:12px;color:var(--mut)}
-  .pill{margin-left:auto;font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);
-    background:#0e1117;color:var(--mut);white-space:nowrap}
-  .pill.on{color:var(--ok);border-color:rgba(52,211,153,.35);background:rgba(52,211,153,.08)}
+  @media(min-width:960px){
+    .side{height:100vh;border-bottom:0;border-right:1px solid var(--line);display:flex;flex-direction:column;padding:22px 16px}
+  }
+  .brand{display:flex;align-items:center;gap:12px;padding:14px 16px}
+  @media(min-width:960px){.brand{padding:0 6px 20px}}
+  .mark{
+    width:42px;height:42px;border-radius:13px;flex:0 0 auto;display:grid;place-items:center;
+    background:linear-gradient(145deg,#ffd486,#e08a00 70%);color:#2a1700;
+    box-shadow:0 10px 24px -8px rgba(224,138,0,.7), inset 0 1px 0 rgba(255,255,255,.5);
+  }
+  .mark svg{width:22px;height:22px}
+  .brand h1{margin:0;font-size:15.5px;font-weight:800;letter-spacing:-.02em}
+  .brand p{margin:0;font-size:11.5px;color:var(--mut);font-weight:500}
 
-  /* ---------- tabs ---------- */
-  .tabs{max-width:920px;margin:0 auto;display:flex;gap:6px;overflow-x:auto;padding:8px 12px 12px;scrollbar-width:none}
-  .tabs::-webkit-scrollbar{display:none}
-  .tab{flex:0 0 auto;border:1px solid var(--line);background:#0f1219;color:var(--mut);
-    padding:9px 14px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:.18s}
-  .tab:hover{color:var(--fg);border-color:#37405080}
-  .tab.active{color:#241300;border-color:transparent;background:linear-gradient(135deg,var(--acc),#e08e0b);
-    box-shadow:0 6px 16px rgba(245,166,35,.3)}
+  .nav{display:flex;gap:6px;overflow-x:auto;padding:0 12px 12px;scrollbar-width:none}
+  .nav::-webkit-scrollbar{display:none}
+  @media(min-width:960px){.nav{flex-direction:column;padding:0;gap:4px;overflow:visible}}
+  .nav button{
+    display:flex;align-items:center;gap:10px;flex:0 0 auto;
+    border:1px solid transparent;background:transparent;color:var(--mut);
+    padding:10px 14px;border-radius:12px;font:inherit;font-size:13.5px;font-weight:600;
+    cursor:pointer;white-space:nowrap;transition:.18s ease;
+  }
+  .nav button svg{width:17px;height:17px;opacity:.9}
+  .nav button:hover{color:var(--fg);background:var(--surface)}
+  .nav button.active{
+    color:#2a1700;background:linear-gradient(135deg,var(--acc),var(--acc-2));
+    box-shadow:0 12px 26px -12px rgba(224,138,0,.9);
+  }
+  .nav button.active svg{opacity:1}
+  @media(min-width:960px){
+    .nav button{padding:11px 13px}
+    .side .foot{margin-top:auto;padding:14px 6px 0;border-top:1px solid var(--line);font-size:11.5px;color:var(--mut-2)}
+  }
+  .conn{display:flex;align-items:center;gap:8px;padding:0 16px 14px;font-size:12px;color:var(--mut)}
+  @media(min-width:960px){.conn{padding:14px 6px 0;order:-1;margin-bottom:10px}}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--mut-2);box-shadow:0 0 0 3px rgba(255,255,255,.04)}
+  .dot.on{background:var(--ok);box-shadow:0 0 0 3px rgba(61,220,151,.16)}
 
-  /* ---------- layout ---------- */
-  main{max-width:920px;margin:0 auto;padding:6px 14px 60px}
-  .view{display:none;animation:fade .25s ease}
-  .view.active{display:block}
-  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
-  .grid{display:grid;gap:14px}
-  @media(min-width:720px){.grid.two{grid-template-columns:1fr 1fr}}
+  /* ============ content ============ */
+  main{padding:22px 18px 90px;max-width:1000px;width:100%}
+  @media(min-width:960px){main{padding:34px 40px 80px}}
+  .head{margin:0 0 20px}
+  .head h2{margin:0;font-size:23px;font-weight:800;letter-spacing:-.03em}
+  .head p{margin:3px 0 0;color:var(--mut);font-size:13.5px}
+  .view{display:none}
+  .view.active{display:block;animation:rise .34s cubic-bezier(.22,.9,.3,1)}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  .grid{display:grid;gap:16px}
+  @media(min-width:760px){.grid.two{grid-template-columns:1.15fr .85fr}}
 
+  /* ============ cards ============ */
   .card{
-    background:linear-gradient(180deg,var(--card),var(--card2));
-    border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow);
+    position:relative;background:linear-gradient(180deg,var(--surface-2),var(--surface));
+    border:1px solid var(--line);border-radius:var(--r-lg);padding:20px;box-shadow:var(--shadow);
+    backdrop-filter:blur(10px);overflow:hidden;
   }
-  .card h2{margin:0 0 4px;font-size:15px;display:flex;align-items:center;gap:8px}
-  .card .sub{color:var(--mut);font-size:12.5px;margin:0 0 12px}
-  label{display:block;font-size:12.5px;color:var(--mut);margin:10px 0 5px;font-weight:600}
+  .card::before{content:"";position:absolute;inset:0 0 auto 0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.16),transparent)}
+  .card h3{margin:0 0 3px;font-size:15px;font-weight:700;display:flex;align-items:center;gap:9px;letter-spacing:-.01em}
+  .card h3 svg{width:17px;height:17px;color:var(--acc)}
+  .card .sub{color:var(--mut);font-size:12.5px;margin:0 0 16px}
+  .card+.card{margin-top:16px}
+
+  /* ============ stats ============ */
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:6px}
+  .stat{
+    background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02));
+    border:1px solid var(--line);border-radius:var(--r);padding:14px 12px;text-align:center;transition:.2s
+  }
+  .stat:hover{border-color:var(--line-2);transform:translateY(-2px)}
+  .stat b{display:block;font-size:26px;font-weight:800;letter-spacing:-.03em;
+    background:linear-gradient(135deg,#fff,var(--acc));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .stat span{font-size:11px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.06em}
+
+  /* ============ form ============ */
+  label{display:block;font-size:12px;color:var(--mut);margin:14px 0 6px;font-weight:600;letter-spacing:.01em}
   input,textarea,select{
-    width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);
-    background:#0f131a;color:var(--fg);font-size:15px;font-family:inherit;transition:.15s
+    width:100%;padding:13px 14px;border-radius:13px;border:1px solid var(--line-2);
+    background:rgba(0,0,0,.35);color:var(--fg);font:inherit;font-size:14.5px;transition:.18s
   }
-  input:focus,textarea:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(245,166,35,.12)}
-  button{cursor:pointer;border:0;border-radius:12px;padding:12px 15px;font-size:14.5px;font-weight:700;
-    background:linear-gradient(135deg,var(--acc),#e08e0b);color:#241300;transition:.15s}
-  button:hover{filter:brightness(1.06)}
-  button:active{transform:translateY(1px)}
-  button:disabled{opacity:.5;cursor:not-allowed}
-  button.ghost{background:#222834;color:var(--fg)}
-  button.danger{background:#3a1a1a;color:#ffb4b4}
-  button.sm{padding:8px 12px;font-size:13px;border-radius:10px}
+  input::placeholder{color:var(--mut-2)}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--acc);box-shadow:var(--ring);background:rgba(0,0,0,.5)}
+  button.act{
+    width:100%;margin-top:14px;cursor:pointer;border:0;border-radius:13px;padding:13px 16px;
+    font:inherit;font-size:14.5px;font-weight:700;color:#2a1700;
+    background:linear-gradient(135deg,var(--acc),var(--acc-2));
+    box-shadow:0 14px 30px -14px rgba(224,138,0,.9), inset 0 1px 0 rgba(255,255,255,.4);transition:.18s
+  }
+  button.act:hover{filter:brightness(1.07);transform:translateY(-1px)}
+  button.act:active{transform:translateY(0)}
+  button.act:disabled{opacity:.45;cursor:not-allowed;transform:none;filter:none}
+  button.ghost{background:rgba(255,255,255,.06);color:var(--fg);box-shadow:none;border:1px solid var(--line-2)}
+  button.ghost:hover{background:rgba(255,255,255,.1)}
+  button.danger{background:linear-gradient(135deg,#ff8a8a,#d64545);color:#2a0000;box-shadow:none}
   .row{display:flex;gap:10px;flex-wrap:wrap}
   .row>*{flex:1;min-width:150px}
-  .msg{margin-top:10px;font-size:13.5px;min-height:1px}
+  .msg{margin-top:12px;font-size:13px;min-height:2px}
   .ok{color:var(--ok)} .bad{color:var(--bad)} .warn{color:var(--warn)} .info{color:var(--info)}
-  .mut{color:var(--mut);font-size:13px}
-  code{background:#0f131a;border:1px solid var(--line);padding:1px 6px;border-radius:6px;font-size:12.5px}
+  .mut{color:var(--mut);font-size:12.5px}
+  code{background:rgba(0,0,0,.4);border:1px solid var(--line);padding:1.5px 6px;border-radius:6px;font-size:12px;font-family:ui-monospace,Menlo,monospace}
 
-  /* stats */
-  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
-  .stat{background:#0f131a;border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}
-  .stat b{display:block;font-size:22px;color:var(--acc2)}
-  .stat span{font-size:11.5px;color:var(--mut)}
-
-  /* list rows */
-  .item{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid var(--line);
-    border-radius:14px;background:#0f131a;margin-bottom:9px}
+  /* ============ list items ============ */
+  .item{display:flex;gap:13px;align-items:flex-start;padding:13px 14px;border:1px solid var(--line);
+    border-radius:var(--r);background:rgba(0,0,0,.28);margin-bottom:10px;transition:.18s}
+  .item:hover{border-color:var(--line-2);background:rgba(0,0,0,.4)}
   .item:last-child{margin-bottom:0}
-  .item .ico{flex:0 0 auto;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:16px;background:#171d27}
+  .ico{flex:0 0 auto;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;
+    background:rgba(255,255,255,.05);border:1px solid var(--line)}
+  .ico svg{width:18px;height:18px;color:var(--mut)}
   .item .body{flex:1;min-width:0}
-  .item .t{font-weight:600;font-size:14px}
-  .item .d{color:var(--mut);font-size:12.5px;word-break:break-word}
-  .badge{font-size:11.5px;padding:3px 9px;border-radius:999px;white-space:nowrap;font-weight:700}
-  .b-ok{background:rgba(52,211,153,.14);color:var(--ok)}
-  .b-bad{background:rgba(248,113,113,.14);color:var(--bad)}
-  .b-run{background:rgba(251,191,36,.14);color:var(--warn)}
-  .b-mut{background:#171d27;color:var(--mut);border:1px solid var(--line)}
-  .logbox{background:#0a0d12;border:1px solid var(--line);border-radius:14px;padding:12px;
-    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:#c7d0dd;
-    max-height:340px;overflow:auto;white-space:pre-wrap;word-break:break-word}
-  .empty{text-align:center;color:var(--mut);padding:22px;font-size:13px}
-  .kv{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:13px}
+  .item .t{font-weight:700;font-size:13.5px;letter-spacing:-.01em}
+  .item .d{color:var(--mut);font-size:12.5px;word-break:break-word;margin-top:1px}
+  .badge{font-size:11px;padding:4px 10px;border-radius:999px;white-space:nowrap;font-weight:700;letter-spacing:.02em}
+  .b-ok{background:rgba(61,220,151,.13);color:var(--ok);border:1px solid rgba(61,220,151,.25)}
+  .b-bad{background:rgba(255,107,107,.13);color:var(--bad);border:1px solid rgba(255,107,107,.25)}
+  .b-run{background:rgba(255,200,87,.13);color:var(--warn);border:1px solid rgba(255,200,87,.25)}
+  .b-mut{background:rgba(255,255,255,.05);color:var(--mut);border:1px solid var(--line)}
+  .kv{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px}
   .kv:last-child{border-bottom:0}
   .kv span:first-child{color:var(--mut)}
-  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:50;
-    background:#111722;border:1px solid var(--line);color:var(--fg);padding:11px 16px;border-radius:12px;
-    box-shadow:var(--shadow);font-size:13.5px;max-width:90vw}
+  .kv span:last-child{font-weight:600;text-align:right}
+  .logbox{background:rgba(0,0,0,.55);border:1px solid var(--line);border-radius:var(--r);padding:14px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;color:#c9d2e0;
+    max-height:320px;overflow:auto;white-space:pre-wrap;word-break:break-word;line-height:1.7}
+  .empty{text-align:center;color:var(--mut-2);padding:26px 10px;font-size:13px}
+
+  /* skeleton */
+  .sk{height:64px;border-radius:var(--r);margin-bottom:10px;border:1px solid var(--line);
+    background:linear-gradient(90deg,rgba(255,255,255,.03) 25%,rgba(255,255,255,.08) 37%,rgba(255,255,255,.03) 63%);
+    background-size:400% 100%;animation:sh 1.3s ease-in-out infinite}
+  @keyframes sh{0%{background-position:100% 0}100%{background-position:-100% 0}}
+
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(14px);z-index:99;
+    background:rgba(22,25,33,.96);border:1px solid var(--line-2);color:var(--fg);padding:12px 18px;border-radius:14px;
+    box-shadow:var(--shadow);font-size:13.5px;font-weight:600;max-width:90vw;opacity:0;transition:.28s;
+    backdrop-filter:blur(14px)}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="hwrap">
-    <div class="logo">📮</div>
-    <div>
-      <h1>FB Auto Poster</h1>
-      <p>Deepu explain · Manus image + Hindi text</p>
+<div class="shell">
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="side">
+    <div class="brand">
+      <div class="mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>
+      </div>
+      <div>
+        <h1>FB Auto Poster</h1>
+        <p>Deepu explain · Control Panel</p>
+      </div>
     </div>
-    <div class="pill" id="connPill">not connected</div>
-  </div>
-  <div class="tabs" id="tabs">
-    <button class="tab active" data-v="dash">📊 Dashboard</button>
-    <button class="tab" data-v="post">🚀 Post</button>
-    <button class="tab" data-v="theme">🎨 Theme</button>
-    <button class="tab" data-v="keys">🔐 Keys</button>
-    <button class="tab" data-v="pages">📄 Pages</button>
-    <button class="tab" data-v="logs">📜 Logs</button>
-  </div>
-</header>
+    <div class="conn"><span class="dot" id="connDot"></span><span id="connText">Not connected</span></div>
+    <nav class="nav" id="nav">
+      <button class="active" data-v="dash"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Dashboard</button>
+      <button data-v="post"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Post</button>
+      <button data-v="theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="14.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="15.5" r="2.5"/></svg>Theme</button>
+      <button data-v="keys"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3 21 2"/><path d="m18 5 2 2"/><path d="m15 8 2 2"/></svg>Keys</button>
+      <button data-v="pages"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h11l5 5v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M14 4v5h5"/></svg>Pages</button>
+      <button data-v="logs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h10"/></svg>Logs</button>
+    </nav>
+    <div class="foot">v2.0 · Manus + GitHub Actions</div>
+  </aside>
 
-<main>
+  <!-- ================= CONTENT ================= -->
+  <main>
 
-  <!-- LOGIN -->
-  <div class="card" id="loginCard">
-    <h2>🔑 Connect karein</h2>
-    <p class="sub">Ek <b>fine-grained GitHub token</b> chahiye (repo <code>fb-auto-poster</code>).
-      Permissions: <b>Actions: Read &amp; Write</b>, <b>Contents: Read &amp; Write</b>, <b>Secrets: Read &amp; Write</b>.
-      Token sirf aapke browser mein save hota hai.</p>
-    <label>GitHub token</label>
-    <input id="tok" type="password" placeholder="github_pat_...">
-    <button onclick="saveTok()" style="width:100%;margin-top:12px">Connect</button>
-    <div class="msg" id="loginMsg"></div>
-  </div>
+    <!-- LOGIN -->
+    <div class="card" id="loginCard">
+      <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Connect karein</h3>
+      <p class="sub">Ek <b>fine-grained GitHub token</b> chahiye (repo <code>fb-auto-poster</code>). Permissions: <b>Actions</b>, <b>Contents</b>, <b>Secrets</b> — sab <b>Read &amp; Write</b>. Token sirf aapke browser mein rehta hai.</p>
+      <label>GitHub token</label>
+      <input id="tok" type="password" placeholder="github_pat_…">
+      <button class="act" onclick="saveTok()">Connect</button>
+      <div class="msg" id="loginMsg"></div>
+    </div>
 
-  <!-- DASHBOARD -->
-  <section class="view active" id="v-dash">
-    <div class="grid">
-      <div class="card">
-        <h2>📊 Overview</h2>
-        <p class="sub">Aapke bot ki aaj tak ki sthiti</p>
-        <div class="stats">
-          <div class="stat"><b id="stPosts">–</b><span>Total posts</span></div>
-          <div class="stat"><b id="stToday">–</b><span>Aaj ke posts</span></div>
-          <div class="stat"><b id="stRuns">–</b><span>Recent runs</span></div>
+    <!-- DASHBOARD -->
+    <section class="view active" id="v-dash">
+      <div class="head"><h2>Dashboard</h2><p>Aapke bot ki ek nazar mein sthiti</p></div>
+      <div class="grid two">
+        <div class="card">
+          <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m7 14 3-3 3 3 5-6"/></svg>Overview</h3>
+          <p class="sub">Aaj tak ka hisaab</p>
+          <div class="stats">
+            <div class="stat"><b id="stPosts">–</b><span>Posts</span></div>
+            <div class="stat"><b id="stToday">–</b><span>Aaj</span></div>
+            <div class="stat"><b id="stRuns">–</b><span>Runs</span></div>
+          </div>
+          <div style="margin-top:14px">
+            <div class="kv"><span>Theme</span><span id="ovTheme">–</span></div>
+            <div class="kv"><span>Posting</span><span>9 AM · 2 PM · 7 PM</span></div>
+            <div class="kv"><span>Safety-net</span><span>10 AM · 3 PM · 8 PM</span></div>
+            <div class="kv"><span>Image</span><span>Manus (multi-key)</span></div>
+          </div>
+          <button class="act ghost" onclick="refreshAll()">Refresh</button>
         </div>
-        <div class="kv"><span>Theme</span><span id="ovTheme">–</span></div>
-        <div class="kv"><span>Schedule</span><span>9:00 AM · 2:00 PM · 7:00 PM IST</span></div>
-        <div class="kv"><span>Safety-net</span><span>10 AM · 3 PM · 8 PM IST</span></div>
-        <button class="ghost" onclick="refreshAll()" style="width:100%;margin-top:12px">🔄 Refresh</button>
+        <div class="card">
+          <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Latest activity</h3>
+          <p class="sub">Sabse nayi harkat</p>
+          <div id="dashLatest"></div>
+          <button class="act ghost" onclick="go('logs')">Poora log dekhein</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- POST -->
+    <section class="view" id="v-post">
+      <div class="head"><h2>Post karein</h2><p>Turant ek post bhejein — Manus image banayega (~2–3 min)</p></div>
+      <div class="card">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4 20-7z"/></svg>Naya post</h3>
+        <p class="sub">Topic khaali chhodein to theme / aaj ka trend use hoga</p>
+        <label>Topic</label>
+        <input id="topic" placeholder="jaise: Neem Karoli Baba">
+        <div class="row" style="margin-top:14px">
+          <button class="act" onclick="postNow(true)">Topic par post</button>
+          <button class="act ghost" onclick="postNow(false)">Aaj ka trend</button>
+        </div>
+        <div class="msg" id="postMsg"></div>
       </div>
       <div class="card">
-        <h2>📜 Latest activity</h2>
-        <p class="sub">Sabse nayi harkat</p>
-        <div id="dashLatest"><div class="empty">Loading…</div></div>
-        <button class="ghost" onclick="go('logs')" style="width:100%;margin-top:10px">Poora log dekhein →</button>
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v6l4 11a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1L9 9z"/></svg>Test run</h3>
+        <p class="sub">Sirf check karein — kuch post nahi hoga</p>
+        <button class="act ghost" onclick="postNow(false,true)">Dry run chalao</button>
+        <div class="msg" id="dryMsg"></div>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- POST -->
-  <section class="view" id="v-post">
-    <div class="card">
-      <h2>🚀 Post karein</h2>
-      <p class="sub">Abhi turant ek post bhejein (Manus image banayega, ~2-3 min)</p>
-      <label>Topic (khaali chhodein = theme / aaj ka trend)</label>
-      <input id="topic" placeholder="jaise: Neem Karoli Baba">
-      <div class="row" style="margin-top:12px">
-        <button onclick="postNow(true)">⚡ Topic par post</button>
-        <button class="ghost" onclick="postNow(false)">🎯 Aaj ka trend</button>
+    <!-- THEME -->
+    <section class="view" id="v-theme">
+      <div class="head"><h2>Theme</h2><p>Kis topic par post ho aur kab tak</p></div>
+      <div class="card">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="14.5" r="2.5"/><circle cx="8.5" cy="7.5" r="2.5"/><circle cx="6.5" cy="15.5" r="2.5"/></svg>Theme set karein</h3>
+        <p class="sub">Har post par naya Hindi text rotate hota hai</p>
+        <label>Topic</label>
+        <input id="thTopic" placeholder="Neem Karoli Baba">
+        <label>Kab tak (YYYY-MM-DD) — khaali = hamesha</label>
+        <input id="thUntil" placeholder="2026-10-04">
+        <button class="act" onclick="saveTheme()">Theme save karein</button>
+        <div class="msg" id="themeMsg"></div>
       </div>
-      <div class="msg" id="postMsg"></div>
-    </div>
-    <div class="card" style="margin-top:14px">
-      <h2>🧪 Test (bina post)</h2>
-      <p class="sub">Sirf check karein — kuch post nahi hoga</p>
-      <button class="ghost" onclick="postNow(false,true)" style="width:100%">🧪 Dry run</button>
-      <div class="msg" id="dryMsg"></div>
-    </div>
-  </section>
+    </section>
 
-  <!-- THEME -->
-  <section class="view" id="v-theme">
-    <div class="card">
-      <h2>🎨 Theme</h2>
-      <p class="sub">Kis topic par post ho aur kab tak</p>
-      <label>Topic</label>
-      <input id="thTopic" placeholder="Neem Karoli Baba">
-      <label>Kab tak (YYYY-MM-DD) — khaali = hamesha</label>
-      <input id="thUntil" placeholder="2026-10-04">
-      <button onclick="saveTheme()" style="width:100%;margin-top:12px">💾 Save karein</button>
-      <div class="msg" id="themeMsg"></div>
-      <p class="mut" style="margin-top:12px">Har post par naya Hindi text rotate hota hai. Image Manus banata hai.</p>
-    </div>
-  </section>
+    <!-- KEYS -->
+    <section class="view" id="v-keys">
+      <div class="head"><h2>Keys &amp; Tokens</h2><p>Add / update / revoke — value encrypted hokar GitHub secret mein jaati hai</p></div>
+      <div class="card">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.7 12.3 21 2"/></svg>Secrets</h3>
+        <div id="secrets"></div>
+        <div class="msg" id="secMsg"></div>
+      </div>
+    </section>
 
-  <!-- KEYS -->
-  <section class="view" id="v-keys">
-    <div class="card">
-      <h2>🔐 Keys &amp; Tokens</h2>
-      <p class="sub">Add / update / revoke — value seedha (encrypted) GitHub secret mein jaati hai</p>
-      <div id="secrets"><div class="empty">Loading…</div></div>
-      <div class="msg" id="secMsg"></div>
-    </div>
-  </section>
+    <!-- PAGES -->
+    <section class="view" id="v-pages">
+      <div class="head"><h2>Facebook Pages</h2><p>Jitne pages chahiye jodein — bot har page par post karega</p></div>
+      <div class="card">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h11l5 5v11a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z"/><path d="M14 4v5h5"/></svg>Pages</h3>
+        <div id="pagesList"></div>
+        <label>Page ka naam</label>
+        <input id="pgName" placeholder="Deepu explain">
+        <label>Page ID</label>
+        <input id="pgId" placeholder="673043289215738">
+        <label>Token secret</label>
+        <input id="pgSecret" placeholder="FB_PAGE_ACCESS_TOKEN">
+        <button class="act" onclick="addPage()">Page jodein</button>
+        <div class="msg" id="pagesMsg"></div>
+      </div>
+    </section>
 
-  <!-- PAGES -->
-  <section class="view" id="v-pages">
-    <div class="card">
-      <h2>📄 Facebook Pages</h2>
-      <p class="sub">Jitne pages chahiye jodein — bot har page par post karega</p>
-      <div id="pagesList"></div>
-      <label>Page ka naam</label>
-      <input id="pgName" placeholder="Deepu explain">
-      <label>Page ID</label>
-      <input id="pgId" placeholder="673043289215738">
-      <label>Token secret (kis secret mein token hai)</label>
-      <input id="pgSecret" placeholder="FB_PAGE_ACCESS_TOKEN">
-      <button onclick="addPage()" style="width:100%;margin-top:12px">➕ Page jodein</button>
-      <div class="msg" id="pagesMsg"></div>
-    </div>
-  </section>
+    <!-- LOGS -->
+    <section class="view" id="v-logs">
+      <div class="head"><h2>Logs</h2><p>Kya hua, kya error aaya, kaunsi post gayi — sab yahan</p></div>
+      <div class="card">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16"/><path d="M4 12h16"/><path d="M4 19h10"/></svg>Post History</h3>
+        <p class="sub">Bot ne kya-kya post kiya</p>
+        <div id="histList"></div>
+      </div>
+      <div class="card">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4"/><path d="M12 18v4"/><path d="m4.9 4.9 2.8 2.8"/><path d="m16.3 16.3 2.8 2.8"/><circle cx="12" cy="12" r="4"/></svg>Runs &amp; Errors</h3>
+        <p class="sub">GitHub Actions ke recent runs</p>
+        <div id="runsList"></div>
+      </div>
+      <div class="card">
+        <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m4 17 6-6-6-6"/><path d="M12 19h8"/></svg>Raw log</h3>
+        <p class="sub">Sabse nayi activity ka summary</p>
+        <div class="logbox" id="rawLog">–</div>
+      </div>
+    </section>
 
-  <!-- LOGS -->
-  <section class="view" id="v-logs">
-    <div class="card">
-      <h2>📜 Post History</h2>
-      <p class="sub">Bot ne kya-kya post kiya (state.json se)</p>
-      <div id="histList"><div class="empty">Loading…</div></div>
-    </div>
-    <div class="card" style="margin-top:14px">
-      <h2>⚙️ Runs &amp; Errors</h2>
-      <p class="sub">GitHub Actions ke recent runs — success / fail</p>
-      <div id="runsList"><div class="empty">Loading…</div></div>
-    </div>
-    <div class="card" style="margin-top:14px">
-      <h2>🧾 Raw log</h2>
-      <p class="sub">Sabse nayi activity ka summary</p>
-      <div class="logbox" id="rawLog">Loading…</div>
-    </div>
-  </section>
-
-</main>
+  </main>
+</div>
 
 <script>
-const OWNER="deepuyrf-blip", REPO="fb-auto-poster", WF="post.yml";
-const API="https://api.github.com";
+const OWNER="deepuyrf-blip", REPO="fb-auto-poster", WF="post.yml", API="https://api.github.com";
 const SECRETS=["FB_PAGE_ID","FB_PAGE_ACCESS_TOKEN","FB_PAGE_2_TOKEN","FB_PAGE_3_TOKEN","FB_PAGE_4_TOKEN","FB_PAGE_5_TOKEN",
   "MANUS_API_KEY","MANUS_API_KEY_2","MANUS_API_KEY_3","MANUS_API_KEY_4","MANUS_API_KEY_5","MANUS_API_KEY_6","MANUS_API_KEY_7",
   "HF_TOKEN","OPENAI_API_KEY"];
-let TOKEN=localStorage.getItem("gh_tok")||"";
-let PAGES=[], HIST=[], RUNS=[];
+let TOKEN=localStorage.getItem("gh_tok")||"", PAGES=[], HIST=[], RUNS=[];
 
 const $=id=>document.getElementById(id);
 const b64e=s=>btoa(unescape(encodeURIComponent(s)));
 const b64d=s=>decodeURIComponent(escape(atob(s.replace(/\n/g,""))));
-const esc=s=>(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const esc=s=>(s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const ist=t=>t?new Date(t).toLocaleString("en-IN",{timeZone:"Asia/Kolkata"}):"–";
+const sk=n=>Array.from({length:n||3}).map(()=>'<div class="sk"></div>').join("");
 
-function toast(t,cls){const d=document.createElement("div");d.className="toast";d.innerHTML=cls?`<span class="${cls}">${t}</span>`:t;
-  document.body.appendChild(d);setTimeout(()=>d.remove(),3800);}
-function msg(el,txt,cls){$(el).innerHTML=cls?`<span class="${cls}">${txt}</span>`:txt;}
+function toast(t,cls){const d=document.createElement("div");d.className="toast";
+  d.innerHTML=cls?`<span class="${cls}">${esc(t)}</span>`:esc(t);document.body.appendChild(d);
+  requestAnimationFrame(()=>d.classList.add("show"));setTimeout(()=>{d.classList.remove("show");setTimeout(()=>d.remove(),300)},3600);}
+function msg(el,txt,cls){$(el).innerHTML=cls?`<span class="${cls}">${esc(txt)}</span>`:esc(txt);}
 function go(v){
   document.querySelectorAll(".view").forEach(s=>s.classList.remove("active"));
-  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.v===v));
+  document.querySelectorAll(".nav button").forEach(b=>b.classList.toggle("active",b.dataset.v===v));
   $("v-"+v).classList.add("active"); window.scrollTo({top:0,behavior:"smooth"});
   if(v==="logs"){loadRuns();loadHistory();}
 }
-$("tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(b)go(b.dataset.v);});
+$("nav").addEventListener("click",e=>{const b=e.target.closest("button");if(b)go(b.dataset.v);});
 
 function gh(path,opts){
-  opts=opts||{}; opts.headers=Object.assign({
-    "Authorization":"Bearer "+TOKEN,"Accept":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"},opts.headers||{});
+  opts=opts||{}; opts.headers=Object.assign({"Authorization":"Bearer "+TOKEN,"Accept":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"},opts.headers||{});
   return fetch(API+path,opts).then(async r=>{
     const t=await r.text(); let j={}; try{j=t?JSON.parse(t):{}}catch(e){j={raw:t}}
-    if(!r.ok) throw new Error((j.message||r.status)+" ("+r.status+")");
-    return j;
-  });
+    if(!r.ok) throw new Error((j.message||r.status)+" ("+r.status+")"); return j;});
 }
 
-/* ---------- auth ---------- */
+/* auth */
 function saveTok(){TOKEN=$("tok").value.trim();if(!TOKEN){msg("loginMsg","Token khaali hai","bad");return}
   localStorage.setItem("gh_tok",TOKEN);connect();}
 async function connect(){
   try{
     const me=await gh("/user");
-    $("connPill").textContent="● "+me.login; $("connPill").classList.add("on");
-    $("loginCard").classList.add("hide");
-    refreshAll();
-  }catch(e){
-    msg("loginMsg","Connect nahi hua: "+e.message,"bad");
-    $("loginCard").classList.remove("hide"); $("connPill").textContent="not connected";
-  }
+    $("connText").textContent=me.login; $("connDot").classList.add("on");
+    $("loginCard").classList.add("hide"); refreshAll();
+  }catch(e){ msg("loginMsg","Connect nahi hua: "+e.message,"bad");
+    $("loginCard").classList.remove("hide"); $("connDot").classList.remove("on"); $("connText").textContent="Not connected"; }
 }
 function refreshAll(){loadRuns();loadHistory();loadTheme();loadSecrets();loadPages();}
 
-/* ---------- runs ---------- */
+/* runs */
 async function loadRuns(){
+  $("runsList").innerHTML=sk(3); $("dashLatest").innerHTML=sk(1);
   try{
-    const d=await gh("/repos/"+OWNER+"/"+REPO+"/actions/runs?per_page=12");
-    RUNS=d.workflow_runs||[];
+    const d=await gh("/repos/"+OWNER+"/"+REPO+"/actions/runs?per_page=12"); RUNS=d.workflow_runs||[];
     $("stRuns").textContent=RUNS.length;
     $("runsList").innerHTML=RUNS.map(r=>{
       const ok=r.conclusion==="success", run=r.status!=="completed";
-      const b=run?'<span class="badge b-run">⏳ '+r.status+'</span>'
-        :(ok?'<span class="badge b-ok">✅ success</span>':'<span class="badge b-bad">❌ '+(r.conclusion||"fail")+'</span>');
-      const ico=run?"⏳":(ok?"✅":"❌");
+      const b=run?'<span class="badge b-run">'+r.status+'</span>':(ok?'<span class="badge b-ok">success</span>':'<span class="badge b-bad">'+esc(r.conclusion||"fail")+'</span>');
+      const ico=run?"⏳":(ok?"✓":"!");
       return `<div class="item"><div class="ico">${ico}</div><div class="body">
-        <div class="t">${esc(r.name)} <span class="mut">· ${r.event}</span></div>
-        <div class="d">${ist(r.created_at)} · <a href="${r.html_url}" target="_blank" rel="noopener">logs dekhein</a></div>
-      </div><div>${b}</div></div>`;
-    }).join("")||'<div class="empty">Koi run nahi.</div>';
-    // latest for dashboard
+        <div class="t">${esc(r.name)}</div>
+        <div class="d">${esc(r.event)} · ${ist(r.created_at)} · <a href="${r.html_url}" target="_blank" rel="noopener">logs</a></div>
+      </div>${b}</div>`;}).join("")||'<div class="empty">Koi run nahi.</div>';
     const l=RUNS[0];
-    $("dashLatest").innerHTML = l?`<div class="item"><div class="ico">${l.conclusion==="success"?"✅":"❌"}</div>
+    $("dashLatest").innerHTML = l?`<div class="item"><div class="ico">${l.conclusion==="success"?"✓":"!"}</div>
       <div class="body"><div class="t">${l.conclusion==="success"?"Post run success":"Run fail"}</div>
-      <div class="d">${ist(l.created_at)} · ${l.event}</div></div></div>`:'<div class="empty">Koi activity nahi.</div>';
-  }catch(e){ $("runsList").innerHTML='<div class="bad">'+esc(e.message)+'</div>'; $("dashLatest").innerHTML='<div class="bad">'+esc(e.message)+'</div>'; }
+      <div class="d">${ist(l.created_at)} · ${esc(l.event)}</div></div></div>`:'<div class="empty">Koi activity nahi.</div>';
+  }catch(e){ $("runsList").innerHTML='<div class="empty bad">'+esc(e.message)+'</div>'; $("dashLatest").innerHTML='<div class="empty bad">'+esc(e.message)+'</div>'; }
 }
 
-/* ---------- history (state.json) ---------- */
+/* history */
 async function loadHistory(){
+  $("histList").innerHTML=sk(2);
   try{
     const d=await gh("/repos/"+OWNER+"/"+REPO+"/contents/state.json");
     const s=JSON.parse(b64d(d.content)); HIST=(s.history||[]).slice().reverse();
@@ -345,41 +422,37 @@ async function loadHistory(){
     const today=new Date().toLocaleDateString("en-IN",{timeZone:"Asia/Kolkata"});
     $("stToday").textContent=HIST.filter(h=>new Date(h.time).toLocaleDateString("en-IN",{timeZone:"Asia/Kolkata"})===today).length;
     $("histList").innerHTML=HIST.length?HIST.map(h=>{
-      const posts=(h.posts||[]).map(p=>`<a href="https://facebook.com/${p.fb_id||""}" target="_blank" rel="noopener">${esc(p.page||"page")}</a>`).join(", ");
-      return `<div class="item"><div class="ico">📮</div><div class="body">
-        <div class="t">${esc((h.caption||h.prompt||"").slice(0,70))}</div>
-        <div class="d">${ist(h.time)} · source: ${esc(h.source||"-")} · Hindi: ${esc(h.hindi||"-")}</div>
-        <div class="d">${posts?("Posted: "+posts):""}</div></div></div>`;
-    }).join(""):'<div class="empty">Abhi tak koi post history nahi.</div>';
-    // raw log
+      const posts=(h.posts||[]).map(p=>`<a href="https://facebook.com/${esc(p.fb_id||"")}" target="_blank" rel="noopener">${esc(p.page||"page")}</a>`).join(", ");
+      return `<div class="item"><div class="ico">✦</div><div class="body">
+        <div class="t">${esc((h.caption||h.prompt||"").slice(0,80))}</div>
+        <div class="d">${ist(h.time)} · ${esc(h.source||"-")} · Hindi: ${esc(h.hindi||"-")}</div>
+        ${posts?('<div class="d">Posted → '+posts+'</div>'):''}</div></div>`;}).join("")
+      :'<div class="empty">Abhi tak koi post history nahi.</div>';
     const lines=[];
-    HIST.slice(0,10).forEach(h=>lines.push(`[${ist(h.time)}] POST (${h.source}) → ${(h.caption||"").slice(0,80)}`));
+    HIST.slice(0,10).forEach(h=>lines.push(`[${ist(h.time)}] POST (${h.source}) → ${(h.caption||"").slice(0,90)}`));
     RUNS.slice(0,6).forEach(r=>lines.push(`[${ist(r.created_at)}] RUN ${r.event} → ${r.conclusion||r.status}`));
     $("rawLog").textContent=lines.join("\n")||"–";
-  }catch(e){ $("histList").innerHTML='<div class="warn">'+esc(e.message)+'</div>'; $("rawLog").textContent=e.message; }
+  }catch(e){ $("histList").innerHTML='<div class="empty warn">'+esc(e.message)+'</div>'; $("rawLog").textContent=e.message; }
 }
 
-/* ---------- post ---------- */
+/* post */
 async function postNow(withTopic,dry){
   const t=$("topic").value.trim();
   if(withTopic&&!t){toast("Topic likhein ya 'Aaj ka trend' dabayein","warn");return}
-  const target=dry?"dryMsg":"postMsg";
-  msg(target,"Bhej rahe hain…","info");
+  const target=dry?"dryMsg":"postMsg"; msg(target,"Bhej rahe hain…","info");
   const inputs={}; if(withTopic) inputs.topic=t; if(dry) inputs.dry_run="true";
   try{
-    await gh("/repos/"+OWNER+"/"+REPO+"/actions/workflows/"+WF+"/dispatches",
-      {method:"POST",body:JSON.stringify({ref:"main",inputs})});
-    msg(target,dry?"🧪 Dry run bhej diya (post nahi hoga).":"✅ Bhej diya! ~2-3 min mein post aa jayegi.","ok");
-    toast(dry?"Dry run trigger hua":"Post trigger hua ✅","ok");
-    setTimeout(()=>{loadRuns();},5000);
+    await gh("/repos/"+OWNER+"/"+REPO+"/actions/workflows/"+WF+"/dispatches",{method:"POST",body:JSON.stringify({ref:"main",inputs})});
+    msg(target,dry?"Dry run bhej diya (post nahi hoga).":"Bhej diya! ~2–3 min mein post aa jayegi.","ok");
+    toast(dry?"Dry run trigger hua":"Post trigger hua","ok"); setTimeout(loadRuns,5000);
   }catch(e){msg(target,"Fail: "+e.message,"bad");toast("Fail: "+e.message,"bad");}
 }
 
-/* ---------- theme ---------- */
+/* theme */
 async function loadTheme(){
   try{const d=await gh("/repos/"+OWNER+"/"+REPO+"/contents/theme.json");
     const t=JSON.parse(b64d(d.content)); $("thTopic").value=t.topic||""; $("thUntil").value=t.until||"";
-    $("ovTheme").textContent=(t.topic||"—")+(t.until?(" (tak "+t.until+")"):"");
+    $("ovTheme").textContent=(t.topic||"—")+(t.until?(" · tak "+t.until):"");
   }catch(e){ $("ovTheme").textContent="—"; }
 }
 async function saveTheme(){
@@ -388,25 +461,25 @@ async function saveTheme(){
     const p={message:"Update theme via dashboard",content:b64e(JSON.stringify({topic:$("thTopic").value.trim(),until:$("thUntil").value.trim()},null,2))};
     if(sha)p.sha=sha;
     await gh("/repos/"+OWNER+"/"+REPO+"/contents/theme.json",{method:"PUT",body:JSON.stringify(p)});
-    msg("themeMsg","✅ Theme save ho gaya.","ok"); toast("Theme saved ✅","ok"); loadTheme();
+    msg("themeMsg","Theme save ho gaya.","ok"); toast("Theme saved","ok"); loadTheme();
   }catch(e){msg("themeMsg","Fail: "+e.message,"bad");}
 }
 
-/* ---------- secrets ---------- */
+/* secrets */
 async function loadSecrets(){
+  $("secrets").innerHTML=sk(3);
   let names=[];
   try{const d=await gh("/repos/"+OWNER+"/"+REPO+"/actions/secrets");names=(d.secrets||[]).map(s=>s.name);}
   catch(e){msg("secMsg","Secrets padhe nahi ja sake — token ko 'Secrets: Read and write' dein.","warn");}
   const all=[...new Set([...SECRETS,...names])];
   $("secrets").innerHTML=all.map(n=>{
     const set=names.includes(n);
-    return `<div class="item"><div class="ico">${set?"🔒":"🔓"}</div><div class="body">
+    return `<div class="item"><div class="ico">${set?"🔒":"○"}</div><div class="body">
       <div class="t">${n} ${set?'<span class="badge b-ok">set</span>':'<span class="badge b-mut">not set</span>'}</div>
-      <input id="sv_${n}" type="password" placeholder="nayi value (khaali = badalna nahi)" style="margin-top:7px">
-      </div><div style="display:flex;flex-direction:column;gap:6px">
-        <button class="sm" onclick="setSecret('${n}')">💾 Set</button>
-        <button class="sm danger" onclick="delSecret('${n}')">🗑️</button></div></div>`;
-  }).join("");
+      <input id="sv_${n}" type="password" placeholder="nayi value (khaali = badalna nahi)" style="margin-top:8px">
+      </div><div style="display:flex;flex-direction:column;gap:7px">
+        <button class="act" style="margin:0;padding:9px 12px;font-size:12.5px" onclick="setSecret('${n}')">Set</button>
+        <button class="act danger" style="margin:0;padding:9px 12px;font-size:12.5px" onclick="delSecret('${n}')">Revoke</button></div></div>`;}).join("");
 }
 async function setSecret(name){
   const v=$("sv_"+name).value.trim();
@@ -417,34 +490,34 @@ async function setSecret(name){
     const sealed=sodium.crypto_box_seal(sodium.from_string(v),sodium.from_base64(pk.key,sodium.base64_variants.ORIGINAL));
     await gh("/repos/"+OWNER+"/"+REPO+"/actions/secrets/"+name,{method:"PUT",
       body:JSON.stringify({encrypted_value:sodium.to_base64(sealed,sodium.base64_variants.ORIGINAL),key_id:pk.key_id})});
-    $("sv_"+name).value=""; msg("secMsg","✅ "+name+" set ho gaya.","ok"); toast(name+" set ✅","ok"); loadSecrets();
+    $("sv_"+name).value=""; msg("secMsg",name+" set ho gaya.","ok"); toast(name+" set","ok"); loadSecrets();
   }catch(e){msg("secMsg","Fail: "+e.message,"bad");}
 }
 async function delSecret(name){
   if(!confirm(name+" ko revoke (delete) karna hai?"))return;
   try{await gh("/repos/"+OWNER+"/"+REPO+"/actions/secrets/"+name,{method:"DELETE"});
-    msg("secMsg","🗑️ "+name+" revoke ho gaya.","ok"); toast(name+" revoke","ok"); loadSecrets();
+    msg("secMsg",name+" revoke ho gaya.","ok"); toast(name+" revoke","ok"); loadSecrets();
   }catch(e){msg("secMsg","Fail: "+e.message,"bad");}
 }
 
-/* ---------- pages ---------- */
+/* pages */
 async function loadPages(){
+  $("pagesList").innerHTML=sk(1);
   try{const d=await gh("/repos/"+OWNER+"/"+REPO+"/contents/pages.json");PAGES=(JSON.parse(b64d(d.content)).pages)||[];}
   catch(e){PAGES=[];}
   renderPages();
 }
 function renderPages(){
   $("pagesList").innerHTML=PAGES.length?PAGES.map((p,i)=>
-    `<div class="item"><div class="ico">📄</div><div class="body">
-      <div class="t">${esc(p.name)}</div><div class="d">${esc(p.page_id)} · ${esc(p.token_secret)}</div></div>
-      <button class="sm danger" onclick="removePage(${i})">🗑️</button></div>`).join("")
+    `<div class="item"><div class="ico">▤</div><div class="body"><div class="t">${esc(p.name)}</div>
+      <div class="d">${esc(p.page_id)} · ${esc(p.token_secret)}</div></div>
+      <button class="act danger" style="margin:0;padding:9px 12px;font-size:12.5px" onclick="removePage(${i})">Remove</button></div>`).join("")
     :'<div class="empty">Abhi koi page nahi. Neeche se jodein.</div>';
 }
 function addPage(){
   const n=$("pgName").value.trim(),id=$("pgId").value.trim(),s=$("pgSecret").value.trim()||"FB_PAGE_ACCESS_TOKEN";
   if(!n||!id){msg("pagesMsg","Naam aur Page ID zaroori hai.","warn");return}
-  PAGES.push({name:n,page_id:id,token_secret:s});
-  $("pgName").value=$("pgId").value=$("pgSecret").value=""; savePages();
+  PAGES.push({name:n,page_id:id,token_secret:s}); $("pgName").value=$("pgId").value=$("pgSecret").value=""; savePages();
 }
 function removePage(i){PAGES.splice(i,1);savePages();}
 async function savePages(){
@@ -453,7 +526,7 @@ async function savePages(){
     const p={message:"Update pages via dashboard",content:b64e(JSON.stringify({pages:PAGES},null,2))};
     if(sha)p.sha=sha;
     await gh("/repos/"+OWNER+"/"+REPO+"/contents/pages.json",{method:"PUT",body:JSON.stringify(p)});
-    msg("pagesMsg","✅ Pages save ho gaye.","ok"); toast("Pages saved ✅","ok"); renderPages();
+    msg("pagesMsg","Pages save ho gaye.","ok"); toast("Pages saved","ok"); renderPages();
   }catch(e){msg("pagesMsg","Fail: "+e.message,"bad");}
 }
 
