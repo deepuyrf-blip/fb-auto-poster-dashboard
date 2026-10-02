@@ -4,9 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FB Auto Poster — Control Panel</title>
-<script src="https://cdn.jsdelivr.net/npm/tweetnacl@1.0.3/nacl.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tweetnacl-util@0.15.1/nacl-util.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/tweetnacl-sealedbox-js@1.2.0/sealedbox.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/jedisct1/libsodium.js@master/dist/browsers/sodium.js"></script>
 <style>
   :root{--bg:#0f1115;--card:#1a1d24;--line:#2a2f3a;--fg:#e8eaed;--mut:#9aa3b2;--acc:#f5a623;--ok:#2ecc71;--bad:#e74c3c;--warn:#f1c40f}
   *{box-sizing:border-box}
@@ -232,10 +230,13 @@ async function setSecret(name){
   const v=$("sv_"+name).value.trim();
   if(!v){msg($("secMsg"),"Value khaali hai.","warn");return}
   try{
+    await sodium.ready;
     const pk=await gh("/repos/"+OWNER+"/"+REPO+"/actions/secrets/public-key");
-    const sealed=sealedBox.seal(nacl.util.decodeUTF8(v),nacl.util.decodeBase64(pk.key));
+    const pkBin=sodium.from_base64(pk.key, sodium.base64_variants.ORIGINAL);
+    const sealed=sodium.crypto_box_seal(sodium.from_string(v), pkBin);
+    const enc=sodium.to_base64(sealed, sodium.base64_variants.ORIGINAL);
     await gh("/repos/"+OWNER+"/"+REPO+"/actions/secrets/"+name,{method:"PUT",
-      body:JSON.stringify({encrypted_value:nacl.util.encodeBase64(sealed),key_id:pk.key_id})});
+      body:JSON.stringify({encrypted_value:enc,key_id:pk.key_id})});
     $("sv_"+name).value="";
     msg($("secMsg"),"✅ "+name+" set ho gaya.","ok"); loadSecrets();
   }catch(e){ msg($("secMsg"),"Fail: "+e.message,"bad"); }
