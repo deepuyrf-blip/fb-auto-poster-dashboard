@@ -4,6 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>FB Auto Poster — Control Panel</title>
+<script src="https://cdn.jsdelivr.net/npm/tweetnacl@1.0.3/nacl.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tweetnacl-util@0.15.1/nacl-util.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tweetnacl-sealedbox-js@1.2.0/sealedbox.min.js"></script>
 <style>
   :root{--bg:#0f1115;--card:#1a1d24;--line:#2a2f3a;--fg:#e8eaed;--mut:#9aa3b2;--acc:#f5a623;--ok:#2ecc71;--bad:#e74c3c;--warn:#f1c40f}
   *{box-sizing:border-box}
@@ -18,21 +21,25 @@
   input,textarea,select{width:100%;padding:11px;border-radius:10px;border:1px solid var(--line);background:#12151b;color:var(--fg);font-size:15px;font-family:inherit}
   button{cursor:pointer;border:0;border-radius:10px;padding:12px 14px;font-size:15px;font-weight:600;background:var(--acc);color:#241300;margin-top:10px;width:100%}
   button.sec{background:#2a2f3a;color:var(--fg)}
+  button.danger{background:#3a1a17;color:#ff9c8f}
+  button.sm{padding:8px 12px;font-size:13px;width:auto;margin:0}
   button:disabled{opacity:.5}
   .row{display:flex;gap:10px;flex-wrap:wrap}
   .row>*{flex:1;min-width:140px}
   .mut{color:var(--mut);font-size:13px}
   .msg{margin-top:10px;font-size:14px}
   .ok{color:var(--ok)}.bad{color:var(--bad)}.warn{color:var(--warn)}
-  .run{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:14px}
-  .run:last-child{border-bottom:0}
+  .run,.sec-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
+  .run:last-child,.sec-row:last-child{border-bottom:0}
   .badge{font-size:12px;padding:3px 9px;border-radius:20px;white-space:nowrap}
   .b-ok{background:rgba(46,204,113,.15);color:var(--ok)}
   .b-bad{background:rgba(231,76,60,.15);color:var(--bad)}
   .b-run{background:rgba(241,196,15,.15);color:var(--warn)}
+  .b-mut{background:#12151b;color:var(--mut);border:1px solid var(--line)}
   a{color:var(--acc)}
   .hide{display:none}
   .pill{display:inline-block;background:#12151b;border:1px solid var(--line);border-radius:20px;padding:4px 10px;font-size:12px;color:var(--mut);margin:2px 4px 2px 0}
+  code{background:#12151b;padding:1px 5px;border-radius:5px;font-size:13px}
 </style>
 </head>
 <body>
@@ -45,10 +52,11 @@
 
   <div class="card" id="loginCard">
     <h2>🔑 GitHub token daalein</h2>
-    <p class="mut">Ek <b>fine-grained GitHub token</b> chahiye (sirf <code>fb-auto-poster</code> repo ke liye,
-      permissions: <b>Actions: Read &amp; Write</b> + <b>Contents: Read &amp; Write</b>). Ye sirf aapke browser mein
-      save hota hai, kahin aur nahi bhejа jaata.</p>
-    <label>GitHub token (github_pat_... )</label>
+    <p class="mut">Ek <b>fine-grained GitHub token</b> chahiye (repo <code>fb-auto-poster</code> ke liye).
+      Permissions: <b>Actions: Read &amp; Write</b>, <b>Contents: Read &amp; Write</b>,
+      aur (settings manage karne ke liye) <b>Secrets: Read &amp; Write</b>.
+      Ye sirf aapke browser mein save hota hai.</p>
+    <label>GitHub token</label>
     <input id="tok" type="password" placeholder="github_pat_...">
     <button onclick="saveTok()">Save &amp; connect</button>
     <div class="msg" id="loginMsg"></div>
@@ -82,7 +90,28 @@
       <input id="thUntil" placeholder="2026-10-04">
       <button onclick="saveTheme()">💾 Theme save karein</button>
       <div class="msg" id="themeMsg"></div>
-      <p class="mut" style="margin-top:10px">Har post par naya Hindi text automatic lagta hai. FB ratio 4:5.</p>
+    </div>
+
+    <div class="card">
+      <h2>🔐 Keys &amp; Tokens (add / revoke)</h2>
+      <p class="mut">FB token, Manus key, HF token yahin se badal ya hata sakte ho. Value daalne par
+        seedha GitHub secret mein (encrypted) chali jaati hai — kahin store nahi hoti.</p>
+      <div id="secrets"></div>
+      <div class="msg" id="secMsg"></div>
+    </div>
+
+    <div class="card">
+      <h2>📄 Facebook Pages (add / remove)</h2>
+      <p class="mut">Jitne pages chahiye, sab yahin se jodein. Har page ka apna token secret
+        (jaise <code>FB_PAGE_ACCESS_TOKEN</code>) hona chahiye — usse upar wale card se set karein.</p>
+      <div id="pagesList"></div>
+      <div class="row">
+        <input id="pgName" placeholder="Page ka naam (Deepu explain)">
+        <input id="pgId" placeholder="Page ID (673043289215738)">
+        <input id="pgSecret" placeholder="Token secret (FB_PAGE_ACCESS_TOKEN)">
+      </div>
+      <button onclick="addPage()">➕ Page jodein</button>
+      <div class="msg" id="pagesMsg"></div>
     </div>
 
     <div class="card">
@@ -99,19 +128,19 @@
 <script>
 const OWNER="deepuyrf-blip", REPO="fb-auto-poster", WF="post.yml";
 const API="https://api.github.com";
+const SECRETS=["FB_PAGE_ID","FB_PAGE_ACCESS_TOKEN","HF_TOKEN","MANUS_API_KEY","OPENAI_API_KEY"];
 let TOKEN = localStorage.getItem("gh_tok") || "";
+let PAGES = [];
 
 function $(id){return document.getElementById(id)}
 function b64e(s){return btoa(unescape(encodeURIComponent(s)))}
 function b64d(s){return decodeURIComponent(escape(atob(s.replace(/\n/g,""))))}
-function msg(el,txt,cls){el.innerHTML='<span class="'+cls+'">'+txt+'</span>'}
+function msg(el,txt,cls){el.innerHTML='<span class="'+(cls||"")+'">'+txt+'</span>'}
 
 function gh(path,opts){
   opts=opts||{}; opts.headers=Object.assign({
-    "Authorization":"Bearer "+TOKEN,
-    "Accept":"application/vnd.github+json",
-    "X-GitHub-Api-Version":"2022-11-28"
-  },opts.headers||{});
+    "Authorization":"Bearer "+TOKEN,"Accept":"application/vnd.github+json",
+    "X-GitHub-Api-Version":"2022-11-28"},opts.headers||{});
   return fetch(API+path,opts).then(async r=>{
     const t=await r.text(); let j={}; try{j=t?JSON.parse(t):{}}catch(e){j={raw:t}}
     if(!r.ok){throw new Error((j.message||r.status)+" ("+r.status+")")}
@@ -122,8 +151,7 @@ function gh(path,opts){
 function saveTok(){
   TOKEN=$("tok").value.trim();
   if(!TOKEN){msg($("loginMsg"),"Token khaali hai","bad");return}
-  localStorage.setItem("gh_tok",TOKEN);
-  connect();
+  localStorage.setItem("gh_tok",TOKEN); connect();
 }
 function logout(){localStorage.removeItem("gh_tok");TOKEN="";location.reload()}
 
@@ -137,7 +165,7 @@ async function connect(){
     $("lnkPage").href="https://facebook.com/"+encodeURIComponent("Deepu explain");
     $("lnkActions").href="https://github.com/"+OWNER+"/"+REPO+"/actions";
     $("lnkRepo").href="https://github.com/"+OWNER+"/"+REPO;
-    loadRuns(); loadTheme();
+    loadRuns(); loadTheme(); loadSecrets(); loadPages();
   }catch(e){
     msg($("loginMsg"),"Connect nahi hua: "+e.message,"bad");
     $("panel").classList.add("hide"); $("loginCard").classList.remove("hide");
@@ -158,16 +186,13 @@ async function loadRuns(){
 }
 
 async function postNow(withTopic){
-  $("postMsg").innerHTML='Bhej rahe hain…';
-  const inputs={};
   const t=$("topic").value.trim();
-  if(withTopic && t){inputs.topic=t}
   if(withTopic && !t){msg($("postMsg"),"Topic likhein ya 'Aaj ka trend' dabayein","warn");return}
+  msg($("postMsg"),"Bhej rahe hain…");
+  const inputs={}; if(withTopic) inputs.topic=t;
   try{
-    await gh("/repos/"+OWNER+"/"+REPO+"/actions/workflows/"+WF+"/dispatches",{
-      method:"POST", body:JSON.stringify({ref:"main", inputs:inputs})
-    });
-    msg($("postMsg"),"✅ Bhej diya! ~2-3 min mein post aa jayegi (Manus image banata hai).","ok");
+    await gh("/repos/"+OWNER+"/"+REPO+"/actions/workflows/"+WF+"/dispatches",{method:"POST",body:JSON.stringify({ref:"main",inputs:inputs})});
+    msg($("postMsg"),"✅ Bhej diya! ~2-3 min mein post aa jayegi.","ok");
     setTimeout(loadRuns,4000);
   }catch(e){ msg($("postMsg"),"Fail: "+e.message,"bad"); }
 }
@@ -177,19 +202,81 @@ async function loadTheme(){
     const d=await gh("/repos/"+OWNER+"/"+REPO+"/contents/theme.json");
     const t=JSON.parse(b64d(d.content));
     $("thTopic").value=t.topic||""; $("thUntil").value=t.until||"";
-  }catch(e){ $("themeMsg").innerHTML='<span class="mut">theme.json nahi mila ('+e.message+')</span>'; }
+  }catch(e){ msg($("themeMsg"),"theme.json nahi mila ("+e.message+")","warn"); }
 }
-
 async function saveTheme(){
   try{
-    let sha=null;
-    try{ const d=await gh("/repos/"+OWNER+"/"+REPO+"/contents/theme.json"); sha=d.sha; }catch(e){}
-    const body={topic:$("thTopic").value.trim(), until:$("thUntil").value.trim()};
-    const payload={message:"Update theme via dashboard", content:b64e(JSON.stringify(body,null,2))};
+    let sha=null; try{const d=await gh("/repos/"+OWNER+"/"+REPO+"/contents/theme.json");sha=d.sha}catch(e){}
+    const payload={message:"Update theme via dashboard",content:b64e(JSON.stringify({topic:$("thTopic").value.trim(),until:$("thUntil").value.trim()},null,2))};
     if(sha) payload.sha=sha;
     await gh("/repos/"+OWNER+"/"+REPO+"/contents/theme.json",{method:"PUT",body:JSON.stringify(payload)});
     msg($("themeMsg"),"✅ Theme save ho gaya.","ok");
   }catch(e){ msg($("themeMsg"),"Fail: "+e.message,"bad"); }
+}
+
+/* ---- Secrets ---- */
+async function loadSecrets(){
+  let names=[];
+  try{ const d=await gh("/repos/"+OWNER+"/"+REPO+"/actions/secrets"); names=(d.secrets||[]).map(s=>s.name); }
+  catch(e){ msg($("secMsg"),"Secrets padhe nahi ja sake — token ko 'Secrets: Read and write' permission dein. ("+e.message+")","warn"); }
+  const all=[...new Set([...SECRETS,...names])];
+  $("secrets").innerHTML = all.map(n=>{
+    const set=names.includes(n);
+    return '<div class="sec-row"><div><b>'+n+'</b> '+(set?'<span class="badge b-ok">set</span>':'<span class="badge b-mut">not set</span>')
+      +'<div><input id="sv_'+n+'" type="password" placeholder="nayi value (khaali = badalna nahi)" style="margin-top:6px"></div></div>'
+      +'<div style="text-align:right"><button class="sm" onclick="setSecret(\''+n+'\')">💾 Set</button> '
+      +'<button class="sm danger" onclick="delSecret(\''+n+'\')">🗑️ Revoke</button></div></div>';
+  }).join("");
+}
+async function setSecret(name){
+  const v=$("sv_"+name).value.trim();
+  if(!v){msg($("secMsg"),"Value khaali hai.","warn");return}
+  try{
+    const pk=await gh("/repos/"+OWNER+"/"+REPO+"/actions/secrets/public-key");
+    const sealed=sealedBox.seal(nacl.util.decodeUTF8(v),nacl.util.decodeBase64(pk.key));
+    await gh("/repos/"+OWNER+"/"+REPO+"/actions/secrets/"+name,{method:"PUT",
+      body:JSON.stringify({encrypted_value:nacl.util.encodeBase64(sealed),key_id:pk.key_id})});
+    $("sv_"+name).value="";
+    msg($("secMsg"),"✅ "+name+" set ho gaya.","ok"); loadSecrets();
+  }catch(e){ msg($("secMsg"),"Fail: "+e.message,"bad"); }
+}
+async function delSecret(name){
+  if(!confirm(name+" ko revoke (delete) karna hai?")) return;
+  try{ await gh("/repos/"+OWNER+"/"+REPO+"/actions/secrets/"+name,{method:"DELETE"});
+    msg($("secMsg"),"🗑️ "+name+" revoke ho gaya.","ok"); loadSecrets();
+  }catch(e){ msg($("secMsg"),"Fail: "+e.message,"bad"); }
+}
+
+/* ---- Pages (pages.json) ---- */
+async function loadPages(){
+  try{
+    const d=await gh("/repos/"+OWNER+"/"+REPO+"/contents/pages.json");
+    PAGES=(JSON.parse(b64d(d.content)).pages)||[];
+  }catch(e){ PAGES=[]; }
+  renderPages();
+}
+function renderPages(){
+  $("pagesList").innerHTML = PAGES.length? PAGES.map((p,i)=>
+    '<div class="sec-row"><div><b>'+p.name+'</b><div class="mut">'+p.page_id+' · '+p.token_secret+'</div></div>'
+    +'<button class="sm danger" onclick="removePage('+i+')">🗑️</button></div>').join("")
+    : '<div class="mut">Abhi koi page nahi. Neeche se jodein.</div>';
+}
+function addPage(){
+  const n=$("pgName").value.trim(),id=$("pgId").value.trim(),s=$("pgSecret").value.trim()||"FB_PAGE_ACCESS_TOKEN";
+  if(!n||!id){msg($("pagesMsg"),"Naam aur Page ID zaroori hai.","warn");return}
+  PAGES.push({name:n,page_id:id,token_secret:s});
+  $("pgName").value=$("pgId").value=$("pgSecret").value="";
+  savePages();
+}
+function removePage(i){ PAGES.splice(i,1); savePages(); }
+async function savePages(){
+  try{
+    let sha=null; try{const d=await gh("/repos/"+OWNER+"/"+REPO+"/contents/pages.json");sha=d.sha}catch(e){}
+    const payload={message:"Update pages via dashboard",content:b64e(JSON.stringify({pages:PAGES},null,2))};
+    if(sha) payload.sha=sha;
+    await gh("/repos/"+OWNER+"/"+REPO+"/contents/pages.json",{method:"PUT",body:JSON.stringify(payload)});
+    msg($("pagesMsg"),"✅ Pages save ho gaye.","ok"); renderPages();
+  }catch(e){ msg($("pagesMsg"),"Fail: "+e.message,"bad"); }
 }
 
 if(TOKEN){ $("tok").value=TOKEN; connect(); }
