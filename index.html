@@ -6,281 +6,458 @@
 <title>FB Auto Poster — Control Panel</title>
 <script src="https://cdn.jsdelivr.net/gh/jedisct1/libsodium.js@master/dist/browsers/sodium.js"></script>
 <style>
-  :root{--bg:#0f1115;--card:#1a1d24;--line:#2a2f3a;--fg:#e8eaed;--mut:#9aa3b2;--acc:#f5a623;--ok:#2ecc71;--bad:#e74c3c;--warn:#f1c40f}
-  *{box-sizing:border-box}
-  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--fg);line-height:1.5}
-  header{padding:18px 16px;background:linear-gradient(135deg,#7a1f10,#3a0f08);border-bottom:1px solid var(--line)}
-  header h1{margin:0;font-size:19px}
-  header p{margin:4px 0 0;color:#f0cfa0;font-size:13px}
-  .wrap{max-width:680px;margin:0 auto;padding:14px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
-  .card h2{margin:0 0 10px;font-size:15px;color:var(--acc)}
-  label{display:block;font-size:13px;color:var(--mut);margin:8px 0 4px}
-  input,textarea,select{width:100%;padding:11px;border-radius:10px;border:1px solid var(--line);background:#12151b;color:var(--fg);font-size:15px;font-family:inherit}
-  button{cursor:pointer;border:0;border-radius:10px;padding:12px 14px;font-size:15px;font-weight:600;background:var(--acc);color:#241300;margin-top:10px;width:100%}
-  button.sec{background:#2a2f3a;color:var(--fg)}
-  button.danger{background:#3a1a17;color:#ff9c8f}
-  button.sm{padding:8px 12px;font-size:13px;width:auto;margin:0}
-  button:disabled{opacity:.5}
+  :root{
+    --bg:#0b0d12; --bg2:#12151c; --card:#161a22; --card2:#1b2029; --line:#262c38;
+    --fg:#eef1f6; --mut:#8b94a7; --acc:#f5a623; --acc2:#ffcf70;
+    --ok:#34d399; --bad:#f87171; --warn:#fbbf24; --info:#60a5fa;
+    --shadow:0 10px 30px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:'Segoe UI',system-ui,-apple-system,Roboto,Arial,sans-serif;
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(245,166,35,.10), transparent 60%),
+      radial-gradient(900px 500px at -10% 10%, rgba(120,60,220,.10), transparent 55%),
+      var(--bg);
+    color:var(--fg); line-height:1.55; min-height:100vh;
+  }
+  a{color:var(--acc2);text-decoration:none}
+  .hide{display:none !important}
+
+  /* ---------- header ---------- */
+  header{
+    position:sticky;top:0;z-index:20;
+    backdrop-filter:blur(14px);
+    background:linear-gradient(180deg, rgba(20,14,8,.92), rgba(15,12,10,.72));
+    border-bottom:1px solid var(--line);
+  }
+  .hwrap{max-width:920px;margin:0 auto;padding:14px 16px 10px;display:flex;align-items:center;gap:12px}
+  .logo{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;font-size:20px;
+    background:linear-gradient(135deg,#f5a623,#b45309);box-shadow:0 6px 18px rgba(245,166,35,.35)}
+  .hwrap h1{margin:0;font-size:17px;letter-spacing:.2px}
+  .hwrap p{margin:1px 0 0;font-size:12px;color:var(--mut)}
+  .pill{margin-left:auto;font-size:12px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);
+    background:#0e1117;color:var(--mut);white-space:nowrap}
+  .pill.on{color:var(--ok);border-color:rgba(52,211,153,.35);background:rgba(52,211,153,.08)}
+
+  /* ---------- tabs ---------- */
+  .tabs{max-width:920px;margin:0 auto;display:flex;gap:6px;overflow-x:auto;padding:8px 12px 12px;scrollbar-width:none}
+  .tabs::-webkit-scrollbar{display:none}
+  .tab{flex:0 0 auto;border:1px solid var(--line);background:#0f1219;color:var(--mut);
+    padding:9px 14px;border-radius:999px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:.18s}
+  .tab:hover{color:var(--fg);border-color:#37405080}
+  .tab.active{color:#241300;border-color:transparent;background:linear-gradient(135deg,var(--acc),#e08e0b);
+    box-shadow:0 6px 16px rgba(245,166,35,.3)}
+
+  /* ---------- layout ---------- */
+  main{max-width:920px;margin:0 auto;padding:6px 14px 60px}
+  .view{display:none;animation:fade .25s ease}
+  .view.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .grid{display:grid;gap:14px}
+  @media(min-width:720px){.grid.two{grid-template-columns:1fr 1fr}}
+
+  .card{
+    background:linear-gradient(180deg,var(--card),var(--card2));
+    border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow);
+  }
+  .card h2{margin:0 0 4px;font-size:15px;display:flex;align-items:center;gap:8px}
+  .card .sub{color:var(--mut);font-size:12.5px;margin:0 0 12px}
+  label{display:block;font-size:12.5px;color:var(--mut);margin:10px 0 5px;font-weight:600}
+  input,textarea,select{
+    width:100%;padding:12px;border-radius:12px;border:1px solid var(--line);
+    background:#0f131a;color:var(--fg);font-size:15px;font-family:inherit;transition:.15s
+  }
+  input:focus,textarea:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px rgba(245,166,35,.12)}
+  button{cursor:pointer;border:0;border-radius:12px;padding:12px 15px;font-size:14.5px;font-weight:700;
+    background:linear-gradient(135deg,var(--acc),#e08e0b);color:#241300;transition:.15s}
+  button:hover{filter:brightness(1.06)}
+  button:active{transform:translateY(1px)}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  button.ghost{background:#222834;color:var(--fg)}
+  button.danger{background:#3a1a1a;color:#ffb4b4}
+  button.sm{padding:8px 12px;font-size:13px;border-radius:10px}
   .row{display:flex;gap:10px;flex-wrap:wrap}
-  .row>*{flex:1;min-width:140px}
+  .row>*{flex:1;min-width:150px}
+  .msg{margin-top:10px;font-size:13.5px;min-height:1px}
+  .ok{color:var(--ok)} .bad{color:var(--bad)} .warn{color:var(--warn)} .info{color:var(--info)}
   .mut{color:var(--mut);font-size:13px}
-  .msg{margin-top:10px;font-size:14px}
-  .ok{color:var(--ok)}.bad{color:var(--bad)}.warn{color:var(--warn)}
-  .run,.sec-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px}
-  .run:last-child,.sec-row:last-child{border-bottom:0}
-  .badge{font-size:12px;padding:3px 9px;border-radius:20px;white-space:nowrap}
-  .b-ok{background:rgba(46,204,113,.15);color:var(--ok)}
-  .b-bad{background:rgba(231,76,60,.15);color:var(--bad)}
-  .b-run{background:rgba(241,196,15,.15);color:var(--warn)}
-  .b-mut{background:#12151b;color:var(--mut);border:1px solid var(--line)}
-  a{color:var(--acc)}
-  .hide{display:none}
-  .pill{display:inline-block;background:#12151b;border:1px solid var(--line);border-radius:20px;padding:4px 10px;font-size:12px;color:var(--mut);margin:2px 4px 2px 0}
-  code{background:#12151b;padding:1px 5px;border-radius:5px;font-size:13px}
+  code{background:#0f131a;border:1px solid var(--line);padding:1px 6px;border-radius:6px;font-size:12.5px}
+
+  /* stats */
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+  .stat{background:#0f131a;border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}
+  .stat b{display:block;font-size:22px;color:var(--acc2)}
+  .stat span{font-size:11.5px;color:var(--mut)}
+
+  /* list rows */
+  .item{display:flex;gap:12px;align-items:flex-start;padding:12px;border:1px solid var(--line);
+    border-radius:14px;background:#0f131a;margin-bottom:9px}
+  .item:last-child{margin-bottom:0}
+  .item .ico{flex:0 0 auto;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:16px;background:#171d27}
+  .item .body{flex:1;min-width:0}
+  .item .t{font-weight:600;font-size:14px}
+  .item .d{color:var(--mut);font-size:12.5px;word-break:break-word}
+  .badge{font-size:11.5px;padding:3px 9px;border-radius:999px;white-space:nowrap;font-weight:700}
+  .b-ok{background:rgba(52,211,153,.14);color:var(--ok)}
+  .b-bad{background:rgba(248,113,113,.14);color:var(--bad)}
+  .b-run{background:rgba(251,191,36,.14);color:var(--warn)}
+  .b-mut{background:#171d27;color:var(--mut);border:1px solid var(--line)}
+  .logbox{background:#0a0d12;border:1px solid var(--line);border-radius:14px;padding:12px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:#c7d0dd;
+    max-height:340px;overflow:auto;white-space:pre-wrap;word-break:break-word}
+  .empty{text-align:center;color:var(--mut);padding:22px;font-size:13px}
+  .kv{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-bottom:1px dashed var(--line);font-size:13px}
+  .kv:last-child{border-bottom:0}
+  .kv span:first-child{color:var(--mut)}
+  .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:50;
+    background:#111722;border:1px solid var(--line);color:var(--fg);padding:11px 16px;border-radius:12px;
+    box-shadow:var(--shadow);font-size:13.5px;max-width:90vw}
 </style>
 </head>
 <body>
+
 <header>
-  <h1>📮 FB Auto Poster — Control Panel</h1>
-  <p>Deepu explain · Manus image + Hindi text + auto post</p>
+  <div class="hwrap">
+    <div class="logo">📮</div>
+    <div>
+      <h1>FB Auto Poster</h1>
+      <p>Deepu explain · Manus image + Hindi text</p>
+    </div>
+    <div class="pill" id="connPill">not connected</div>
+  </div>
+  <div class="tabs" id="tabs">
+    <button class="tab active" data-v="dash">📊 Dashboard</button>
+    <button class="tab" data-v="post">🚀 Post</button>
+    <button class="tab" data-v="theme">🎨 Theme</button>
+    <button class="tab" data-v="keys">🔐 Keys</button>
+    <button class="tab" data-v="pages">📄 Pages</button>
+    <button class="tab" data-v="logs">📜 Logs</button>
+  </div>
 </header>
 
-<div class="wrap">
+<main>
 
+  <!-- LOGIN -->
   <div class="card" id="loginCard">
-    <h2>🔑 GitHub token daalein</h2>
-    <p class="mut">Ek <b>fine-grained GitHub token</b> chahiye (repo <code>fb-auto-poster</code> ke liye).
-      Permissions: <b>Actions: Read &amp; Write</b>, <b>Contents: Read &amp; Write</b>,
-      aur (settings manage karne ke liye) <b>Secrets: Read &amp; Write</b>.
-      Ye sirf aapke browser mein save hota hai.</p>
+    <h2>🔑 Connect karein</h2>
+    <p class="sub">Ek <b>fine-grained GitHub token</b> chahiye (repo <code>fb-auto-poster</code>).
+      Permissions: <b>Actions: Read &amp; Write</b>, <b>Contents: Read &amp; Write</b>, <b>Secrets: Read &amp; Write</b>.
+      Token sirf aapke browser mein save hota hai.</p>
     <label>GitHub token</label>
     <input id="tok" type="password" placeholder="github_pat_...">
-    <button onclick="saveTok()">Save &amp; connect</button>
+    <button onclick="saveTok()" style="width:100%;margin-top:12px">Connect</button>
     <div class="msg" id="loginMsg"></div>
   </div>
 
-  <div id="panel" class="hide">
-
-    <div class="card">
-      <h2>📊 Status</h2>
-      <div id="statusLine" class="mut">Loading…</div>
-      <div id="runs"></div>
-      <button class="sec" onclick="loadRuns()">🔄 Refresh</button>
+  <!-- DASHBOARD -->
+  <section class="view active" id="v-dash">
+    <div class="grid">
+      <div class="card">
+        <h2>📊 Overview</h2>
+        <p class="sub">Aapke bot ki aaj tak ki sthiti</p>
+        <div class="stats">
+          <div class="stat"><b id="stPosts">–</b><span>Total posts</span></div>
+          <div class="stat"><b id="stToday">–</b><span>Aaj ke posts</span></div>
+          <div class="stat"><b id="stRuns">–</b><span>Recent runs</span></div>
+        </div>
+        <div class="kv"><span>Theme</span><span id="ovTheme">–</span></div>
+        <div class="kv"><span>Schedule</span><span>9:00 AM · 2:00 PM · 7:00 PM IST</span></div>
+        <div class="kv"><span>Safety-net</span><span>10 AM · 3 PM · 8 PM IST</span></div>
+        <button class="ghost" onclick="refreshAll()" style="width:100%;margin-top:12px">🔄 Refresh</button>
+      </div>
+      <div class="card">
+        <h2>📜 Latest activity</h2>
+        <p class="sub">Sabse nayi harkat</p>
+        <div id="dashLatest"><div class="empty">Loading…</div></div>
+        <button class="ghost" onclick="go('logs')" style="width:100%;margin-top:10px">Poora log dekhein →</button>
+      </div>
     </div>
+  </section>
 
+  <!-- POST -->
+  <section class="view" id="v-post">
     <div class="card">
       <h2>🚀 Post karein</h2>
+      <p class="sub">Abhi turant ek post bhejein (Manus image banayega, ~2-3 min)</p>
       <label>Topic (khaali chhodein = theme / aaj ka trend)</label>
       <input id="topic" placeholder="jaise: Neem Karoli Baba">
-      <div class="row">
+      <div class="row" style="margin-top:12px">
         <button onclick="postNow(true)">⚡ Topic par post</button>
-        <button class="sec" onclick="postNow(false)">🎯 Aaj ka trend</button>
+        <button class="ghost" onclick="postNow(false)">🎯 Aaj ka trend</button>
       </div>
       <div class="msg" id="postMsg"></div>
     </div>
+    <div class="card" style="margin-top:14px">
+      <h2>🧪 Test (bina post)</h2>
+      <p class="sub">Sirf check karein — kuch post nahi hoga</p>
+      <button class="ghost" onclick="postNow(false,true)" style="width:100%">🧪 Dry run</button>
+      <div class="msg" id="dryMsg"></div>
+    </div>
+  </section>
 
+  <!-- THEME -->
+  <section class="view" id="v-theme">
     <div class="card">
-      <h2>🎨 Theme (kis par post ho)</h2>
+      <h2>🎨 Theme</h2>
+      <p class="sub">Kis topic par post ho aur kab tak</p>
       <label>Topic</label>
       <input id="thTopic" placeholder="Neem Karoli Baba">
       <label>Kab tak (YYYY-MM-DD) — khaali = hamesha</label>
       <input id="thUntil" placeholder="2026-10-04">
-      <button onclick="saveTheme()">💾 Theme save karein</button>
+      <button onclick="saveTheme()" style="width:100%;margin-top:12px">💾 Save karein</button>
       <div class="msg" id="themeMsg"></div>
+      <p class="mut" style="margin-top:12px">Har post par naya Hindi text rotate hota hai. Image Manus banata hai.</p>
     </div>
+  </section>
 
+  <!-- KEYS -->
+  <section class="view" id="v-keys">
     <div class="card">
-      <h2>🔐 Keys &amp; Tokens (add / revoke)</h2>
-      <p class="mut">FB token, Manus key, HF token yahin se badal ya hata sakte ho. Value daalne par
-        seedha GitHub secret mein (encrypted) chali jaati hai — kahin store nahi hoti.</p>
-      <div id="secrets"></div>
+      <h2>🔐 Keys &amp; Tokens</h2>
+      <p class="sub">Add / update / revoke — value seedha (encrypted) GitHub secret mein jaati hai</p>
+      <div id="secrets"><div class="empty">Loading…</div></div>
       <div class="msg" id="secMsg"></div>
     </div>
+  </section>
 
+  <!-- PAGES -->
+  <section class="view" id="v-pages">
     <div class="card">
-      <h2>📄 Facebook Pages (add / remove)</h2>
-      <p class="mut">Jitne pages chahiye, sab yahin se jodein. Har page ka apna token secret
-        (jaise <code>FB_PAGE_ACCESS_TOKEN</code>) hona chahiye — usse upar wale card se set karein.</p>
+      <h2>📄 Facebook Pages</h2>
+      <p class="sub">Jitne pages chahiye jodein — bot har page par post karega</p>
       <div id="pagesList"></div>
-      <div class="row">
-        <input id="pgName" placeholder="Page ka naam (Deepu explain)">
-        <input id="pgId" placeholder="Page ID (673043289215738)">
-        <input id="pgSecret" placeholder="Token secret (FB_PAGE_ACCESS_TOKEN)">
-      </div>
-      <button onclick="addPage()">➕ Page jodein</button>
+      <label>Page ka naam</label>
+      <input id="pgName" placeholder="Deepu explain">
+      <label>Page ID</label>
+      <input id="pgId" placeholder="673043289215738">
+      <label>Token secret (kis secret mein token hai)</label>
+      <input id="pgSecret" placeholder="FB_PAGE_ACCESS_TOKEN">
+      <button onclick="addPage()" style="width:100%;margin-top:12px">➕ Page jodein</button>
       <div class="msg" id="pagesMsg"></div>
     </div>
+  </section>
 
+  <!-- LOGS -->
+  <section class="view" id="v-logs">
     <div class="card">
-      <h2>🔗 Links</h2>
-      <span class="pill"><a id="lnkPage" target="_blank" rel="noopener">Facebook Page</a></span>
-      <span class="pill"><a id="lnkActions" target="_blank" rel="noopener">GitHub Actions</a></span>
-      <span class="pill"><a id="lnkRepo" target="_blank" rel="noopener">Repo</a></span>
-      <button class="sec" onclick="logout()">🚪 Token hatao</button>
+      <h2>📜 Post History</h2>
+      <p class="sub">Bot ne kya-kya post kiya (state.json se)</p>
+      <div id="histList"><div class="empty">Loading…</div></div>
     </div>
+    <div class="card" style="margin-top:14px">
+      <h2>⚙️ Runs &amp; Errors</h2>
+      <p class="sub">GitHub Actions ke recent runs — success / fail</p>
+      <div id="runsList"><div class="empty">Loading…</div></div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h2>🧾 Raw log</h2>
+      <p class="sub">Sabse nayi activity ka summary</p>
+      <div class="logbox" id="rawLog">Loading…</div>
+    </div>
+  </section>
 
-  </div>
-</div>
+</main>
 
 <script>
 const OWNER="deepuyrf-blip", REPO="fb-auto-poster", WF="post.yml";
 const API="https://api.github.com";
-const SECRETS=["FB_PAGE_ID","FB_PAGE_ACCESS_TOKEN","FB_PAGE_2_TOKEN","FB_PAGE_3_TOKEN","FB_PAGE_4_TOKEN","FB_PAGE_5_TOKEN","MANUS_API_KEY","MANUS_API_KEY_2","MANUS_API_KEY_3","MANUS_API_KEY_4","MANUS_API_KEY_5","MANUS_API_KEY_6","MANUS_API_KEY_7","HF_TOKEN","OPENAI_API_KEY"];
-let TOKEN = localStorage.getItem("gh_tok") || "";
-let PAGES = [];
+const SECRETS=["FB_PAGE_ID","FB_PAGE_ACCESS_TOKEN","FB_PAGE_2_TOKEN","FB_PAGE_3_TOKEN","FB_PAGE_4_TOKEN","FB_PAGE_5_TOKEN",
+  "MANUS_API_KEY","MANUS_API_KEY_2","MANUS_API_KEY_3","MANUS_API_KEY_4","MANUS_API_KEY_5","MANUS_API_KEY_6","MANUS_API_KEY_7",
+  "HF_TOKEN","OPENAI_API_KEY"];
+let TOKEN=localStorage.getItem("gh_tok")||"";
+let PAGES=[], HIST=[], RUNS=[];
 
-function $(id){return document.getElementById(id)}
-function b64e(s){return btoa(unescape(encodeURIComponent(s)))}
-function b64d(s){return decodeURIComponent(escape(atob(s.replace(/\n/g,""))))}
-function msg(el,txt,cls){el.innerHTML='<span class="'+(cls||"")+'">'+txt+'</span>'}
+const $=id=>document.getElementById(id);
+const b64e=s=>btoa(unescape(encodeURIComponent(s)));
+const b64d=s=>decodeURIComponent(escape(atob(s.replace(/\n/g,""))));
+const esc=s=>(s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ist=t=>t?new Date(t).toLocaleString("en-IN",{timeZone:"Asia/Kolkata"}):"–";
+
+function toast(t,cls){const d=document.createElement("div");d.className="toast";d.innerHTML=cls?`<span class="${cls}">${t}</span>`:t;
+  document.body.appendChild(d);setTimeout(()=>d.remove(),3800);}
+function msg(el,txt,cls){$(el).innerHTML=cls?`<span class="${cls}">${txt}</span>`:txt;}
+function go(v){
+  document.querySelectorAll(".view").forEach(s=>s.classList.remove("active"));
+  document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.v===v));
+  $("v-"+v).classList.add("active"); window.scrollTo({top:0,behavior:"smooth"});
+  if(v==="logs"){loadRuns();loadHistory();}
+}
+$("tabs").addEventListener("click",e=>{const b=e.target.closest(".tab");if(b)go(b.dataset.v);});
 
 function gh(path,opts){
   opts=opts||{}; opts.headers=Object.assign({
-    "Authorization":"Bearer "+TOKEN,"Accept":"application/vnd.github+json",
-    "X-GitHub-Api-Version":"2022-11-28"},opts.headers||{});
+    "Authorization":"Bearer "+TOKEN,"Accept":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"},opts.headers||{});
   return fetch(API+path,opts).then(async r=>{
     const t=await r.text(); let j={}; try{j=t?JSON.parse(t):{}}catch(e){j={raw:t}}
-    if(!r.ok){throw new Error((j.message||r.status)+" ("+r.status+")")}
+    if(!r.ok) throw new Error((j.message||r.status)+" ("+r.status+")");
     return j;
   });
 }
 
-function saveTok(){
-  TOKEN=$("tok").value.trim();
-  if(!TOKEN){msg($("loginMsg"),"Token khaali hai","bad");return}
-  localStorage.setItem("gh_tok",TOKEN); connect();
-}
-function logout(){localStorage.removeItem("gh_tok");TOKEN="";location.reload()}
-
+/* ---------- auth ---------- */
+function saveTok(){TOKEN=$("tok").value.trim();if(!TOKEN){msg("loginMsg","Token khaali hai","bad");return}
+  localStorage.setItem("gh_tok",TOKEN);connect();}
 async function connect(){
   try{
     const me=await gh("/user");
-    $("loginMsg").innerHTML='';
+    $("connPill").textContent="● "+me.login; $("connPill").classList.add("on");
     $("loginCard").classList.add("hide");
-    $("panel").classList.remove("hide");
-    $("statusLine").innerHTML='Connected as <b>'+me.login+'</b>';
-    $("lnkPage").href="https://facebook.com/"+encodeURIComponent("Deepu explain");
-    $("lnkActions").href="https://github.com/"+OWNER+"/"+REPO+"/actions";
-    $("lnkRepo").href="https://github.com/"+OWNER+"/"+REPO;
-    loadRuns(); loadTheme(); loadSecrets(); loadPages();
+    refreshAll();
   }catch(e){
-    msg($("loginMsg"),"Connect nahi hua: "+e.message,"bad");
-    $("panel").classList.add("hide"); $("loginCard").classList.remove("hide");
+    msg("loginMsg","Connect nahi hua: "+e.message,"bad");
+    $("loginCard").classList.remove("hide"); $("connPill").textContent="not connected";
   }
 }
+function refreshAll(){loadRuns();loadHistory();loadTheme();loadSecrets();loadPages();}
 
+/* ---------- runs ---------- */
 async function loadRuns(){
   try{
-    const d=await gh("/repos/"+OWNER+"/"+REPO+"/actions/runs?per_page=8");
-    const runs=d.workflow_runs||[];
-    $("runs").innerHTML = runs.map(r=>{
-      const st=r.status==="completed"?(r.conclusion==="success"?'<span class="badge b-ok">✅ success</span>':'<span class="badge b-bad">❌ '+r.conclusion+'</span>'):'<span class="badge b-run">⏳ '+r.status+'</span>';
-      const t=new Date(r.created_at).toLocaleString("en-IN",{timeZone:"Asia/Kolkata"});
-      return '<div class="run"><div><div>'+r.name+' · '+r.event+'</div><div class="mut">'+t+'</div></div>'
-        + '<div style="text-align:right">'+st+'<br><a href="'+r.html_url+'" target="_blank" rel="noopener">logs</a></div></div>';
-    }).join("") || '<div class="mut">Koi run nahi.</div>';
-  }catch(e){ $("runs").innerHTML='<div class="bad">'+e.message+'</div>'; }
+    const d=await gh("/repos/"+OWNER+"/"+REPO+"/actions/runs?per_page=12");
+    RUNS=d.workflow_runs||[];
+    $("stRuns").textContent=RUNS.length;
+    $("runsList").innerHTML=RUNS.map(r=>{
+      const ok=r.conclusion==="success", run=r.status!=="completed";
+      const b=run?'<span class="badge b-run">⏳ '+r.status+'</span>'
+        :(ok?'<span class="badge b-ok">✅ success</span>':'<span class="badge b-bad">❌ '+(r.conclusion||"fail")+'</span>');
+      const ico=run?"⏳":(ok?"✅":"❌");
+      return `<div class="item"><div class="ico">${ico}</div><div class="body">
+        <div class="t">${esc(r.name)} <span class="mut">· ${r.event}</span></div>
+        <div class="d">${ist(r.created_at)} · <a href="${r.html_url}" target="_blank" rel="noopener">logs dekhein</a></div>
+      </div><div>${b}</div></div>`;
+    }).join("")||'<div class="empty">Koi run nahi.</div>';
+    // latest for dashboard
+    const l=RUNS[0];
+    $("dashLatest").innerHTML = l?`<div class="item"><div class="ico">${l.conclusion==="success"?"✅":"❌"}</div>
+      <div class="body"><div class="t">${l.conclusion==="success"?"Post run success":"Run fail"}</div>
+      <div class="d">${ist(l.created_at)} · ${l.event}</div></div></div>`:'<div class="empty">Koi activity nahi.</div>';
+  }catch(e){ $("runsList").innerHTML='<div class="bad">'+esc(e.message)+'</div>'; $("dashLatest").innerHTML='<div class="bad">'+esc(e.message)+'</div>'; }
 }
 
-async function postNow(withTopic){
+/* ---------- history (state.json) ---------- */
+async function loadHistory(){
+  try{
+    const d=await gh("/repos/"+OWNER+"/"+REPO+"/contents/state.json");
+    const s=JSON.parse(b64d(d.content)); HIST=(s.history||[]).slice().reverse();
+    $("stPosts").textContent=HIST.length;
+    const today=new Date().toLocaleDateString("en-IN",{timeZone:"Asia/Kolkata"});
+    $("stToday").textContent=HIST.filter(h=>new Date(h.time).toLocaleDateString("en-IN",{timeZone:"Asia/Kolkata"})===today).length;
+    $("histList").innerHTML=HIST.length?HIST.map(h=>{
+      const posts=(h.posts||[]).map(p=>`<a href="https://facebook.com/${p.fb_id||""}" target="_blank" rel="noopener">${esc(p.page||"page")}</a>`).join(", ");
+      return `<div class="item"><div class="ico">📮</div><div class="body">
+        <div class="t">${esc((h.caption||h.prompt||"").slice(0,70))}</div>
+        <div class="d">${ist(h.time)} · source: ${esc(h.source||"-")} · Hindi: ${esc(h.hindi||"-")}</div>
+        <div class="d">${posts?("Posted: "+posts):""}</div></div></div>`;
+    }).join(""):'<div class="empty">Abhi tak koi post history nahi.</div>';
+    // raw log
+    const lines=[];
+    HIST.slice(0,10).forEach(h=>lines.push(`[${ist(h.time)}] POST (${h.source}) → ${(h.caption||"").slice(0,80)}`));
+    RUNS.slice(0,6).forEach(r=>lines.push(`[${ist(r.created_at)}] RUN ${r.event} → ${r.conclusion||r.status}`));
+    $("rawLog").textContent=lines.join("\n")||"–";
+  }catch(e){ $("histList").innerHTML='<div class="warn">'+esc(e.message)+'</div>'; $("rawLog").textContent=e.message; }
+}
+
+/* ---------- post ---------- */
+async function postNow(withTopic,dry){
   const t=$("topic").value.trim();
-  if(withTopic && !t){msg($("postMsg"),"Topic likhein ya 'Aaj ka trend' dabayein","warn");return}
-  msg($("postMsg"),"Bhej rahe hain…");
-  const inputs={}; if(withTopic) inputs.topic=t;
+  if(withTopic&&!t){toast("Topic likhein ya 'Aaj ka trend' dabayein","warn");return}
+  const target=dry?"dryMsg":"postMsg";
+  msg(target,"Bhej rahe hain…","info");
+  const inputs={}; if(withTopic) inputs.topic=t; if(dry) inputs.dry_run="true";
   try{
-    await gh("/repos/"+OWNER+"/"+REPO+"/actions/workflows/"+WF+"/dispatches",{method:"POST",body:JSON.stringify({ref:"main",inputs:inputs})});
-    msg($("postMsg"),"✅ Bhej diya! ~2-3 min mein post aa jayegi.","ok");
-    setTimeout(loadRuns,4000);
-  }catch(e){ msg($("postMsg"),"Fail: "+e.message,"bad"); }
+    await gh("/repos/"+OWNER+"/"+REPO+"/actions/workflows/"+WF+"/dispatches",
+      {method:"POST",body:JSON.stringify({ref:"main",inputs})});
+    msg(target,dry?"🧪 Dry run bhej diya (post nahi hoga).":"✅ Bhej diya! ~2-3 min mein post aa jayegi.","ok");
+    toast(dry?"Dry run trigger hua":"Post trigger hua ✅","ok");
+    setTimeout(()=>{loadRuns();},5000);
+  }catch(e){msg(target,"Fail: "+e.message,"bad");toast("Fail: "+e.message,"bad");}
 }
 
+/* ---------- theme ---------- */
 async function loadTheme(){
-  try{
-    const d=await gh("/repos/"+OWNER+"/"+REPO+"/contents/theme.json");
-    const t=JSON.parse(b64d(d.content));
-    $("thTopic").value=t.topic||""; $("thUntil").value=t.until||"";
-  }catch(e){ msg($("themeMsg"),"theme.json nahi mila ("+e.message+")","warn"); }
+  try{const d=await gh("/repos/"+OWNER+"/"+REPO+"/contents/theme.json");
+    const t=JSON.parse(b64d(d.content)); $("thTopic").value=t.topic||""; $("thUntil").value=t.until||"";
+    $("ovTheme").textContent=(t.topic||"—")+(t.until?(" (tak "+t.until+")"):"");
+  }catch(e){ $("ovTheme").textContent="—"; }
 }
 async function saveTheme(){
   try{
     let sha=null; try{const d=await gh("/repos/"+OWNER+"/"+REPO+"/contents/theme.json");sha=d.sha}catch(e){}
-    const payload={message:"Update theme via dashboard",content:b64e(JSON.stringify({topic:$("thTopic").value.trim(),until:$("thUntil").value.trim()},null,2))};
-    if(sha) payload.sha=sha;
-    await gh("/repos/"+OWNER+"/"+REPO+"/contents/theme.json",{method:"PUT",body:JSON.stringify(payload)});
-    msg($("themeMsg"),"✅ Theme save ho gaya.","ok");
-  }catch(e){ msg($("themeMsg"),"Fail: "+e.message,"bad"); }
+    const p={message:"Update theme via dashboard",content:b64e(JSON.stringify({topic:$("thTopic").value.trim(),until:$("thUntil").value.trim()},null,2))};
+    if(sha)p.sha=sha;
+    await gh("/repos/"+OWNER+"/"+REPO+"/contents/theme.json",{method:"PUT",body:JSON.stringify(p)});
+    msg("themeMsg","✅ Theme save ho gaya.","ok"); toast("Theme saved ✅","ok"); loadTheme();
+  }catch(e){msg("themeMsg","Fail: "+e.message,"bad");}
 }
 
-/* ---- Secrets ---- */
+/* ---------- secrets ---------- */
 async function loadSecrets(){
   let names=[];
-  try{ const d=await gh("/repos/"+OWNER+"/"+REPO+"/actions/secrets"); names=(d.secrets||[]).map(s=>s.name); }
-  catch(e){ msg($("secMsg"),"Secrets padhe nahi ja sake — token ko 'Secrets: Read and write' permission dein. ("+e.message+")","warn"); }
+  try{const d=await gh("/repos/"+OWNER+"/"+REPO+"/actions/secrets");names=(d.secrets||[]).map(s=>s.name);}
+  catch(e){msg("secMsg","Secrets padhe nahi ja sake — token ko 'Secrets: Read and write' dein.","warn");}
   const all=[...new Set([...SECRETS,...names])];
-  $("secrets").innerHTML = all.map(n=>{
+  $("secrets").innerHTML=all.map(n=>{
     const set=names.includes(n);
-    return '<div class="sec-row"><div><b>'+n+'</b> '+(set?'<span class="badge b-ok">set</span>':'<span class="badge b-mut">not set</span>')
-      +'<div><input id="sv_'+n+'" type="password" placeholder="nayi value (khaali = badalna nahi)" style="margin-top:6px"></div></div>'
-      +'<div style="text-align:right"><button class="sm" onclick="setSecret(\''+n+'\')">💾 Set</button> '
-      +'<button class="sm danger" onclick="delSecret(\''+n+'\')">🗑️ Revoke</button></div></div>';
+    return `<div class="item"><div class="ico">${set?"🔒":"🔓"}</div><div class="body">
+      <div class="t">${n} ${set?'<span class="badge b-ok">set</span>':'<span class="badge b-mut">not set</span>'}</div>
+      <input id="sv_${n}" type="password" placeholder="nayi value (khaali = badalna nahi)" style="margin-top:7px">
+      </div><div style="display:flex;flex-direction:column;gap:6px">
+        <button class="sm" onclick="setSecret('${n}')">💾 Set</button>
+        <button class="sm danger" onclick="delSecret('${n}')">🗑️</button></div></div>`;
   }).join("");
 }
 async function setSecret(name){
   const v=$("sv_"+name).value.trim();
-  if(!v){msg($("secMsg"),"Value khaali hai.","warn");return}
+  if(!v){msg("secMsg","Value khaali hai.","warn");return}
   try{
     await sodium.ready;
     const pk=await gh("/repos/"+OWNER+"/"+REPO+"/actions/secrets/public-key");
-    const pkBin=sodium.from_base64(pk.key, sodium.base64_variants.ORIGINAL);
-    const sealed=sodium.crypto_box_seal(sodium.from_string(v), pkBin);
-    const enc=sodium.to_base64(sealed, sodium.base64_variants.ORIGINAL);
+    const sealed=sodium.crypto_box_seal(sodium.from_string(v),sodium.from_base64(pk.key,sodium.base64_variants.ORIGINAL));
     await gh("/repos/"+OWNER+"/"+REPO+"/actions/secrets/"+name,{method:"PUT",
-      body:JSON.stringify({encrypted_value:enc,key_id:pk.key_id})});
-    $("sv_"+name).value="";
-    msg($("secMsg"),"✅ "+name+" set ho gaya.","ok"); loadSecrets();
-  }catch(e){ msg($("secMsg"),"Fail: "+e.message,"bad"); }
+      body:JSON.stringify({encrypted_value:sodium.to_base64(sealed,sodium.base64_variants.ORIGINAL),key_id:pk.key_id})});
+    $("sv_"+name).value=""; msg("secMsg","✅ "+name+" set ho gaya.","ok"); toast(name+" set ✅","ok"); loadSecrets();
+  }catch(e){msg("secMsg","Fail: "+e.message,"bad");}
 }
 async function delSecret(name){
-  if(!confirm(name+" ko revoke (delete) karna hai?")) return;
-  try{ await gh("/repos/"+OWNER+"/"+REPO+"/actions/secrets/"+name,{method:"DELETE"});
-    msg($("secMsg"),"🗑️ "+name+" revoke ho gaya.","ok"); loadSecrets();
-  }catch(e){ msg($("secMsg"),"Fail: "+e.message,"bad"); }
+  if(!confirm(name+" ko revoke (delete) karna hai?"))return;
+  try{await gh("/repos/"+OWNER+"/"+REPO+"/actions/secrets/"+name,{method:"DELETE"});
+    msg("secMsg","🗑️ "+name+" revoke ho gaya.","ok"); toast(name+" revoke","ok"); loadSecrets();
+  }catch(e){msg("secMsg","Fail: "+e.message,"bad");}
 }
 
-/* ---- Pages (pages.json) ---- */
+/* ---------- pages ---------- */
 async function loadPages(){
-  try{
-    const d=await gh("/repos/"+OWNER+"/"+REPO+"/contents/pages.json");
-    PAGES=(JSON.parse(b64d(d.content)).pages)||[];
-  }catch(e){ PAGES=[]; }
+  try{const d=await gh("/repos/"+OWNER+"/"+REPO+"/contents/pages.json");PAGES=(JSON.parse(b64d(d.content)).pages)||[];}
+  catch(e){PAGES=[];}
   renderPages();
 }
 function renderPages(){
-  $("pagesList").innerHTML = PAGES.length? PAGES.map((p,i)=>
-    '<div class="sec-row"><div><b>'+p.name+'</b><div class="mut">'+p.page_id+' · '+p.token_secret+'</div></div>'
-    +'<button class="sm danger" onclick="removePage('+i+')">🗑️</button></div>').join("")
-    : '<div class="mut">Abhi koi page nahi. Neeche se jodein.</div>';
+  $("pagesList").innerHTML=PAGES.length?PAGES.map((p,i)=>
+    `<div class="item"><div class="ico">📄</div><div class="body">
+      <div class="t">${esc(p.name)}</div><div class="d">${esc(p.page_id)} · ${esc(p.token_secret)}</div></div>
+      <button class="sm danger" onclick="removePage(${i})">🗑️</button></div>`).join("")
+    :'<div class="empty">Abhi koi page nahi. Neeche se jodein.</div>';
 }
 function addPage(){
   const n=$("pgName").value.trim(),id=$("pgId").value.trim(),s=$("pgSecret").value.trim()||"FB_PAGE_ACCESS_TOKEN";
-  if(!n||!id){msg($("pagesMsg"),"Naam aur Page ID zaroori hai.","warn");return}
+  if(!n||!id){msg("pagesMsg","Naam aur Page ID zaroori hai.","warn");return}
   PAGES.push({name:n,page_id:id,token_secret:s});
-  $("pgName").value=$("pgId").value=$("pgSecret").value="";
-  savePages();
+  $("pgName").value=$("pgId").value=$("pgSecret").value=""; savePages();
 }
-function removePage(i){ PAGES.splice(i,1); savePages(); }
+function removePage(i){PAGES.splice(i,1);savePages();}
 async function savePages(){
   try{
     let sha=null; try{const d=await gh("/repos/"+OWNER+"/"+REPO+"/contents/pages.json");sha=d.sha}catch(e){}
-    const payload={message:"Update pages via dashboard",content:b64e(JSON.stringify({pages:PAGES},null,2))};
-    if(sha) payload.sha=sha;
-    await gh("/repos/"+OWNER+"/"+REPO+"/contents/pages.json",{method:"PUT",body:JSON.stringify(payload)});
-    msg($("pagesMsg"),"✅ Pages save ho gaye.","ok"); renderPages();
-  }catch(e){ msg($("pagesMsg"),"Fail: "+e.message,"bad"); }
+    const p={message:"Update pages via dashboard",content:b64e(JSON.stringify({pages:PAGES},null,2))};
+    if(sha)p.sha=sha;
+    await gh("/repos/"+OWNER+"/"+REPO+"/contents/pages.json",{method:"PUT",body:JSON.stringify(p)});
+    msg("pagesMsg","✅ Pages save ho gaye.","ok"); toast("Pages saved ✅","ok"); renderPages();
+  }catch(e){msg("pagesMsg","Fail: "+e.message,"bad");}
 }
 
-if(TOKEN){ $("tok").value=TOKEN; connect(); }
+if(TOKEN){$("tok").value=TOKEN;connect();}
 </script>
 </body>
 </html>
